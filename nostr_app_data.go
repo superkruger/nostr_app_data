@@ -38,7 +38,7 @@ func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrApp
 	})
 
 	// Create put-chat-records function.
-	_ := awslambda.NewFunction(stack, jsii.String("TestFunction"), &awslambda.FunctionProps{
+	_ = awslambda.NewFunction(stack, jsii.String("TestFunction"), &awslambda.FunctionProps{
 		FunctionName: jsii.String(*stack.StackName() + "-Test"),
 		Runtime:      awslambda.Runtime_GO_1_X(),
 		MemorySize:   jsii.Number(128),

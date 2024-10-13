@@ -26,11 +26,11 @@ func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrApp
 
 	// The code that defines your stack goes here
 
-	connectHandler := lambdaFunction(stack, "Connect", "../app/functions/connect")
-	disconnectHandler := lambdaFunction(stack, "Disconnect", "../app/functions/disconnect")
-	defaultHandler := lambdaFunction(stack, "Default", "../app/functions/default")
-	requestHandler := lambdaFunction(stack, "Request", "../app/functions/request")
-	eventHandler := lambdaFunction(stack, "Event", "../app/functions/event")
+	connectHandler := lambdaFunction(stack, "Connect", "../app/functions/connect", nil)
+	disconnectHandler := lambdaFunction(stack, "Disconnect", "../app/functions/disconnect", nil)
+	defaultHandler := lambdaFunction(stack, "Default", "../app/functions/default", nil)
+	requestHandler := lambdaFunction(stack, "Request", "../app/functions/request", nil)
+	eventHandler := lambdaFunction(stack, "Event", "../app/functions/event", nil)
 
 	webSocketApi := awsapigatewayv2.NewWebSocketApi(stack, jsii.String("mywsapi"), &awsapigatewayv2.WebSocketApiProps{
 		ConnectRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
@@ -50,25 +50,38 @@ func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrApp
 	webSocketApi.AddRoute(jsii.String("EVENT"), &awsapigatewayv2.WebSocketRouteOptions{
 		Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("EventIntegration"), eventHandler, nil),
 	})
-
-	awsapigatewayv2.NewWebSocketStage(stack, jsii.String("mywsstage"), &awsapigatewayv2.WebSocketStageProps{
+	wsStage := awsapigatewayv2.NewWebSocketStage(stack, jsii.String("mywsstage"), &awsapigatewayv2.WebSocketStageProps{
 		AutoDeploy:   jsii.Bool(true),
 		StageName:    jsii.String("test"),
 		WebSocketApi: webSocketApi,
 	})
 
-	//echoLambdaFunc := awscdklambdago.NewGoFunction(stack, jsii.String("EchoFunc"), &awscdklambdago.GoFunctionProps{
-	//	FunctionName: jsii.String("EchoFunc"),
-	//	Description:  jsii.String("an apigw handler that returns IP and User-Agent as JSON"),
-	//	Entry:        jsii.String("../app/functions/test"),
-	//})
-	//echoApi := awscdkapigw.NewHttpApi(stack, jsii.String("EchoApi"), nil)
+	eventHandler.AddEnvironment(
+		jsii.String("WS_API_ENDPOINT"),
+		jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *env().Region, *wsStage.StageName())),
+		nil)
+
+	//postHandler := lambdaFunction(stack, "Post", "../app/functions/post",
+	//	map[string]*string{"WS_API_ENDPOINT": jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *env().Region, *wsStage.StageName()))})
 	//
-	//echoApi.AddRoutes(&awscdkapigw.AddRoutesOptions{
-	//	Path:        jsii.String("/"),
-	//	Methods:     &[]awscdkapigw.HttpMethod{awscdkapigw.HttpMethod_GET},
-	//	Integration: awsapigwintegrations.NewHttpLambdaIntegration(jsii.String("EchoApiIntegration"), echoLambdaFunc, nil),
+	//httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String("myhttpapi"), &awsapigatewayv2.HttpApiProps{
+	//	CorsPreflight: &awsapigatewayv2.CorsPreflightOptions{
+	//		AllowMethods: &[]awsapigatewayv2.CorsHttpMethod{awsapigatewayv2.CorsHttpMethod_POST, awsapigatewayv2.CorsHttpMethod_OPTIONS},
+	//		AllowOrigins: &[]*string{jsii.String("*")},
+	//	},
+	//	CreateDefaultStage: jsii.Bool(false),
+	//	//DefaultIntegration: awsapigatewayv2integrations.NewHttpLambdaIntegration(jsii.String("PostIntegration"), postHandler, nil),
 	//})
+	//httpApi.AddStage(jsii.String("myhttpstage"), &awsapigatewayv2.HttpStageOptions{
+	//	AutoDeploy: jsii.Bool(true),
+	//	StageName:  jsii.String("test"),
+	//})
+	//httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+	//	Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(jsii.String("PostIntegration"), postHandler, nil),
+	//	Path:        jsii.String("/"),
+	//	Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_POST},
+	//})
+	//webSocketApi.GrantManageConnections(postHandler)
 
 	awscdk.NewCfnOutput(stack, jsii.String("WSSApiURL"), &awscdk.CfnOutputProps{
 		Value:       webSocketApi.ApiEndpoint(),
@@ -76,16 +89,16 @@ func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrApp
 		ExportName:  jsii.String("WSSApiURL"),
 	})
 
-	//awscdk.NewCfnOutput(stack, jsii.String("LogGroupOut"), &awscdk.CfnOutputProps{
-	//	Value:       logGroup.LogGroupArn(),
-	//	Description: jsii.String("log group"),
-	//	ExportName:  jsii.String("Connect2LogGroup"),
+	//awscdk.NewCfnOutput(stack, jsii.String("HTTPApiURL"), &awscdk.CfnOutputProps{
+	//	Value:       httpApi.ApiEndpoint(),
+	//	Description: jsii.String("the URL to the HTTP API"),
+	//	ExportName:  jsii.String("HTTPApiURL"),
 	//})
 
 	return stack
 }
 
-func lambdaFunction(stack awscdk.Stack, name, path string) awslambda.Function {
+func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*string) awslambda.Function {
 	awslogs.NewLogGroup(stack, jsii.String(name+"LogGroup"), &awslogs.LogGroupProps{
 		LogGroupName:  jsii.String("/aws/lambda/" + name),
 		Retention:     awslogs.RetentionDays_ONE_WEEK,
@@ -109,6 +122,7 @@ func lambdaFunction(stack awscdk.Stack, name, path string) awslambda.Function {
 		Timeout:      awscdk.Duration_Seconds(jsii.Number(3)),
 		Handler:      jsii.String("bootstrap"),
 		Architecture: awslambda.Architecture_ARM_64(),
+		Environment:  &env,
 	})
 }
 

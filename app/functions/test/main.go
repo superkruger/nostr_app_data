@@ -19,9 +19,8 @@ func mustNewHandler() *handler {
 	return &handler{}
 }
 
-func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (utils.Response, error) {
+func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (utils.Response, error) {
 	log.Printf("got request: %+v", request)
-	log.Printf("got context: %+v", ctx)
 	return h.responder.WithStatus(http.StatusOK), nil
 }
 

@@ -29,6 +29,8 @@ func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrApp
 	connectHandler := lambdaFunction(stack, "Connect", "../app/functions/connect")
 	disconnectHandler := lambdaFunction(stack, "Disconnect", "../app/functions/disconnect")
 	defaultHandler := lambdaFunction(stack, "Default", "../app/functions/default")
+	requestHandler := lambdaFunction(stack, "Request", "../app/functions/request")
+	eventHandler := lambdaFunction(stack, "Event", "../app/functions/event")
 
 	webSocketApi := awsapigatewayv2.NewWebSocketApi(stack, jsii.String("mywsapi"), &awsapigatewayv2.WebSocketApiProps{
 		ConnectRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
@@ -40,6 +42,13 @@ func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrApp
 		DefaultRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
 			Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("DefaultIntegration"), defaultHandler, nil),
 		},
+		RouteSelectionExpression: jsii.String("$request.body.[0]"),
+	})
+	webSocketApi.AddRoute(jsii.String("REQ"), &awsapigatewayv2.WebSocketRouteOptions{
+		Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("RequestIntegration"), requestHandler, nil),
+	})
+	webSocketApi.AddRoute(jsii.String("EVENT"), &awsapigatewayv2.WebSocketRouteOptions{
+		Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("EventIntegration"), eventHandler, nil),
 	})
 
 	awsapigatewayv2.NewWebSocketStage(stack, jsii.String("mywsstage"), &awsapigatewayv2.WebSocketStageProps{

@@ -3,15 +3,28 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+
+	utils "nostr_app_data_app_utils"
 )
 
-func handleRequest(ctx context.Context) error {
-	log.Println("test function")
-	return nil
+type handler struct {
+	responder utils.ProxyResponder
+}
+
+func mustNewHandler() *handler {
+	return &handler{}
+}
+
+func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (utils.Response, error) {
+	log.Printf("got request: %+v", request)
+	return h.responder.WithStatus(http.StatusOK), nil
 }
 
 func main() {
-	lambda.Start(handleRequest)
+	h := mustNewHandler()
+	lambda.Start(h.handleRequest)
 }

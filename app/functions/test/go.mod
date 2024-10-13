@@ -1,4 +1,4 @@
-module nostr_app_data_app
+module nostr_app_data_app_functions_test
 
 go 1.21.13
 

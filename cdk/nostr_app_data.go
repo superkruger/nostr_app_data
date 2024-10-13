@@ -32,7 +32,7 @@ func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrApp
 	})
 
 	connectHandler := awslambda.NewFunction(stack, jsii.String("Connect2Function"), &awslambda.FunctionProps{
-		Code: awslambda.Code_FromAsset(jsii.String("../app/functions/test/."), &awss3assets.AssetOptions{
+		Code: awslambda.Code_FromAsset(jsii.String("../app/functions/test"), &awss3assets.AssetOptions{
 			Bundling: &awscdk.BundlingOptions{
 				Image: awscdk.DockerImage_FromRegistry(jsii.String("golang:1.21.13")),
 				Command: &[]*string{

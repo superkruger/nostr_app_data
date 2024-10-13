@@ -2,5 +2,6 @@ go 1.21.13
 
 use (
 	./app/functions/test
+	./app/utils
 	./cdk
 )

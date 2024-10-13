@@ -26,40 +26,20 @@ func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrApp
 
 	// The code that defines your stack goes here
 
-	logGroup := awslogs.NewLogGroup(stack, jsii.String("Connect2LogGroup"), &awslogs.LogGroupProps{
-		LogGroupName: jsii.String("/aws/lambda/Connect2"),
-		Retention:    awslogs.RetentionDays_ONE_WEEK,
-	})
-
-	connectHandler := awslambda.NewFunction(stack, jsii.String("Connect2Function"), &awslambda.FunctionProps{
-		Code: awslambda.Code_FromAsset(jsii.String("../app/functions/test"), &awss3assets.AssetOptions{
-			Bundling: &awscdk.BundlingOptions{
-				Image: awscdk.DockerImage_FromRegistry(jsii.String("golang:1.21.13")),
-				Command: &[]*string{
-					jsii.String("bash"),
-					jsii.String("-c"),
-					jsii.String("GO111MODULE=on GOCACHE=/tmp go mod tidy && GOCACHE=/tmp GOARCH=arm64 GOOS=linux go build -tags lambda.norpc -o /asset-output/bootstrap"),
-				},
-			},
-		}),
-		FunctionName: jsii.String("Connect2"),
-		Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
-		MemorySize:   jsii.Number(128),
-		Timeout:      awscdk.Duration_Seconds(jsii.Number(60)),
-		Handler:      jsii.String("bootstrap"),
-		Architecture: awslambda.Architecture_ARM_64(),
-	})
+	connectHandler := lambdaFunction(stack, "Connect", "../app/functions/connect")
+	disconnectHandler := lambdaFunction(stack, "Disconnect", "../app/functions/disconnect")
+	defaultHandler := lambdaFunction(stack, "Default", "../app/functions/default")
 
 	webSocketApi := awsapigatewayv2.NewWebSocketApi(stack, jsii.String("mywsapi"), &awsapigatewayv2.WebSocketApiProps{
 		ConnectRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
 			Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("ConnectIntegration"), connectHandler, nil),
 		},
-		//DisconnectRouteOptions: &apigwv2.WebSocketRouteOptions{
-		//	Integration: awsapigwintegrations.NewWebSocketLambdaIntegration(jsii.String("DisconnectIntegration"), disconnectHandler),
-		//},
-		//DefaultRouteOptions: &apigwv2.WebSocketRouteOptions{
-		//	Integration: awsapigwintegrations.NewWebSocketLambdaIntegration(jsii.String("DefaultIntegration"), defaultHandler),
-		//},
+		DisconnectRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
+			Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("DisconnectIntegration"), disconnectHandler, nil),
+		},
+		DefaultRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
+			Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("DefaultIntegration"), defaultHandler, nil),
+		},
 	})
 
 	awsapigatewayv2.NewWebSocketStage(stack, jsii.String("mywsstage"), &awsapigatewayv2.WebSocketStageProps{
@@ -87,13 +67,40 @@ func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrApp
 		ExportName:  jsii.String("WSSApiURL"),
 	})
 
-	awscdk.NewCfnOutput(stack, jsii.String("LogGroupOut"), &awscdk.CfnOutputProps{
-		Value:       logGroup.LogGroupArn(),
-		Description: jsii.String("log group"),
-		ExportName:  jsii.String("Connect2LogGroup"),
-	})
+	//awscdk.NewCfnOutput(stack, jsii.String("LogGroupOut"), &awscdk.CfnOutputProps{
+	//	Value:       logGroup.LogGroupArn(),
+	//	Description: jsii.String("log group"),
+	//	ExportName:  jsii.String("Connect2LogGroup"),
+	//})
 
 	return stack
+}
+
+func lambdaFunction(stack awscdk.Stack, name, path string) awslambda.Function {
+	awslogs.NewLogGroup(stack, jsii.String(name+"LogGroup"), &awslogs.LogGroupProps{
+		LogGroupName:  jsii.String("/aws/lambda/" + name),
+		Retention:     awslogs.RetentionDays_ONE_WEEK,
+		RemovalPolicy: awscdk.RemovalPolicy_DESTROY,
+	})
+
+	return awslambda.NewFunction(stack, jsii.String(name+"Function"), &awslambda.FunctionProps{
+		Code: awslambda.Code_FromAsset(jsii.String(path), &awss3assets.AssetOptions{
+			Bundling: &awscdk.BundlingOptions{
+				Image: awscdk.DockerImage_FromRegistry(jsii.String("golang:1.21.13")),
+				Command: &[]*string{
+					jsii.String("bash"),
+					jsii.String("-c"),
+					jsii.String("GOCACHE=/tmp go mod tidy && GOCACHE=/tmp GOARCH=arm64 GOOS=linux go build -tags lambda.norpc -o /asset-output/bootstrap"),
+				},
+			},
+		}),
+		FunctionName: jsii.String(name),
+		Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
+		MemorySize:   jsii.Number(128),
+		Timeout:      awscdk.Duration_Seconds(jsii.Number(3)),
+		Handler:      jsii.String("bootstrap"),
+		Architecture: awslambda.Architecture_ARM_64(),
+	})
 }
 
 func main() {

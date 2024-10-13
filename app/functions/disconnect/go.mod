@@ -1,4 +1,4 @@
-module nostr_app_data_app_functions_test
+module github.com/superkruger/nostr_app_data/app/functions/disconnect
 
 go 1.21.13
 

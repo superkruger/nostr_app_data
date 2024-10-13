@@ -1,7 +1,11 @@
 go 1.21.13
 
 use (
-	./app/functions/test
+	./app/functions/connect
+	./app/functions/default
+	./app/functions/disconnect
+
 	./app/utils
+
 	./cdk
 )

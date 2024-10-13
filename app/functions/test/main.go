@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
-	"github.com/superkruger/nostr_app_data/utils"
+	"github.com/superkruger/nostr_app_data/app/utils"
 )
 
 type handler struct {

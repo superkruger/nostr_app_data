@@ -1,4 +1,4 @@
-module github.com/superkruger/nostr_app_data/utils
+module github.com/superkruger/nostr_app_data/app/utils
 
 go 1.21.13
 

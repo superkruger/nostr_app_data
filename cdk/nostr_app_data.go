@@ -38,7 +38,7 @@ func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrApp
 				Command: &[]*string{
 					jsii.String("bash"),
 					jsii.String("-c"),
-					jsii.String("GOCACHE=/tmp go mod tidy && GOCACHE=/tmp GOARCH=arm64 GOOS=linux go build -tags lambda.norpc -o /asset-output/bootstrap"),
+					jsii.String("GO111MODULE=on GOCACHE=/tmp go mod tidy && GOCACHE=/tmp GOARCH=arm64 GOOS=linux go build -tags lambda.norpc -o /asset-output/bootstrap"),
 				},
 			},
 		}),

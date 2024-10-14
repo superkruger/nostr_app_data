@@ -149,10 +149,11 @@ func NewCdkPipeline(scope constructs.Construct, id *string, props *awscdk.StackP
 		Synth: pipelines.NewCodeBuildStep(jsii.String("Synth"), &pipelines.CodeBuildStepProps{
 			Input: githubRepo,
 			Commands: &[]*string{
-				jsii.String("npm install -g aws-cdk"),
 				jsii.String("cd cdk"),
+				jsii.String("npm install -g aws-cdk"),
 				jsii.String("cdk synth"),
 			},
+			PrimaryOutputDirectory: jsii.String("cdk/cdk.out"),
 		}),
 	})
 

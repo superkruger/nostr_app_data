@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cdk diff --profile PowerUserNostr
+cdk diff $@ --profile PowerUserNostr

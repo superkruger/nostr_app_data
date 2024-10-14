@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cdk deploy --profile PowerUserNostr
+cdk deploy $@ --profile PowerUserNostr

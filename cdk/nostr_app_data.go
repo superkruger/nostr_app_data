@@ -99,7 +99,7 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 	return awslambda.NewFunction(stack, jsii.String(name+"Function"), &awslambda.FunctionProps{
 		Code: awslambda.Code_FromAsset(jsii.String(path), &awss3assets.AssetOptions{
 			Bundling: &awscdk.BundlingOptions{
-				Image: awscdk.DockerImage_FromRegistry(jsii.String("golang:1.23")),
+				Image: awscdk.DockerImage_FromRegistry(jsii.String("golang:1.23.0")),
 				Command: &[]*string{
 					jsii.String("bash"),
 					jsii.String("-c"),

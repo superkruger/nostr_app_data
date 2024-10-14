@@ -24,8 +24,6 @@ func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrApp
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
-	// The code that defines your stack goes here
-
 	connectHandler := lambdaFunction(stack, "Connect", "../app/functions/connect", nil)
 	disconnectHandler := lambdaFunction(stack, "Disconnect", "../app/functions/disconnect", nil)
 	defaultHandler := lambdaFunction(stack, "Default", "../app/functions/default", nil)
@@ -104,7 +102,6 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 		Retention:     awslogs.RetentionDays_ONE_WEEK,
 		RemovalPolicy: awscdk.RemovalPolicy_DESTROY,
 	})
-
 	return awslambda.NewFunction(stack, jsii.String(name+"Function"), &awslambda.FunctionProps{
 		Code: awslambda.Code_FromAsset(jsii.String(path), &awss3assets.AssetOptions{
 			Bundling: &awscdk.BundlingOptions{

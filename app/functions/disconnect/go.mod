@@ -1,6 +1,6 @@
 module github.com/superkruger/nostr_app_data/app/functions/disconnect
 
-go 1.21.13
+go 1.23
 
 require (
 	github.com/aws/aws-lambda-go v1.47.0

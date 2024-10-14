@@ -119,22 +119,18 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 
 func NewCdkApplication(scope constructs.Construct, id *string, props *awscdk.StageProps) awscdk.Stage {
 	stage := awscdk.NewStage(scope, id, props)
-
 	_ = NewCdkStack(stage, jsii.String("cdk-stack"), &awscdk.StackProps{Env: props.Env})
-
 	return stage
 }
 
 func NewCdkPipeline(scope constructs.Construct, id *string, props *awscdk.StackProps) awscdk.Stack {
 	stack := awscdk.NewStack(scope, id, props)
-
 	// GitHub repo with owner and repository name
 	githubRepo := pipelines.CodePipelineSource_GitHub(jsii.String("superkruger/nostr_app_data"), jsii.String("master"), &pipelines.GitHubSourceOptions{
 		Authentication: awscdk.SecretValue_SecretsManager(jsii.String("github-token"), &awscdk.SecretsManagerSecretOptions{
 			JsonField: jsii.String("github-token"),
 		}),
 	})
-
 	// self mutating pipeline
 	myPipeline := pipelines.NewCodePipeline(stack, jsii.String("cdkPipeline"), &pipelines.CodePipelineProps{
 		PipelineName: jsii.String("CdkPipeline"),
@@ -157,7 +153,6 @@ func NewCdkPipeline(scope constructs.Construct, id *string, props *awscdk.StackP
 			PrimaryOutputDirectory: jsii.String("cdk/cdk.out"),
 		}),
 	})
-
 	// deployment of actual CDK application
 	myPipeline.AddStage(NewCdkApplication(stack, jsii.String("MyApplication"), &awscdk.StageProps{
 		Env: env(),
@@ -170,29 +165,15 @@ func NewCdkPipeline(scope constructs.Construct, id *string, props *awscdk.StackP
 			}),
 		},
 	})
-
 	return stack
 }
 
 func main() {
 	defer jsii.Close()
-
 	app := awscdk.NewApp(nil)
-
 	NewCdkPipeline(app, jsii.String("CdkPipelineStack"), &awscdk.StackProps{
 		Env: env(),
 	})
-
-	//stages := []string{"test", "prod"}
-
-	//for _, stage := range stages {
-	//NewNostrAppDataStack(app, prepend("test", "NostrAppDataStack"), &NostrAppDataStackProps{
-	//	awscdk.StackProps{
-	//		Env: env(),
-	//	},
-	//})
-	//}
-
 	app.Synth(nil)
 }
 

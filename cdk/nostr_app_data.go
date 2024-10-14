@@ -6,23 +6,17 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2integrations"
+	codebuild "github.com/aws/aws-cdk-go/awscdk/v2/awscodebuild"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslogs"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3assets"
+	"github.com/aws/aws-cdk-go/awscdk/v2/pipelines"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 )
 
-type NostrAppDataStackProps struct {
-	awscdk.StackProps
-}
-
-func NewNostrAppDataStack(scope constructs.Construct, id string, props *NostrAppDataStackProps) awscdk.Stack {
-	var sprops awscdk.StackProps
-	if props != nil {
-		sprops = props.StackProps
-	}
-	stack := awscdk.NewStack(scope, &id, &sprops)
+func NewCdkStack(scope constructs.Construct, id *string, props *awscdk.StackProps) awscdk.Stack {
+	stack := awscdk.NewStack(scope, id, props)
 
 	connectHandler := lambdaFunction(stack, "Connect", "../app/functions/connect", nil)
 	disconnectHandler := lambdaFunction(stack, "Disconnect", "../app/functions/disconnect", nil)
@@ -123,19 +117,78 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 	})
 }
 
+func NewCdkApplication(scope constructs.Construct, id *string, props *awscdk.StageProps) awscdk.Stage {
+	stage := awscdk.NewStage(scope, id, props)
+
+	_ = NewCdkStack(stage, jsii.String("cdk-stack"), &awscdk.StackProps{Env: props.Env})
+
+	return stage
+}
+
+func NewCdkPipeline(scope constructs.Construct, id *string, props *awscdk.StackProps) awscdk.Stack {
+	stack := awscdk.NewStack(scope, id, props)
+
+	// GitHub repo with owner and repository name
+	githubRepo := pipelines.CodePipelineSource_GitHub(jsii.String("superkruger/nostr_app_data"), jsii.String("master"), &pipelines.GitHubSourceOptions{
+		Authentication: awscdk.SecretValue_SecretsManager(jsii.String("github-token"), &awscdk.SecretsManagerSecretOptions{
+			JsonField: jsii.String("github-token"),
+		}),
+	})
+
+	// self mutating pipeline
+	myPipeline := pipelines.NewCodePipeline(stack, jsii.String("cdkPipeline"), &pipelines.CodePipelineProps{
+		PipelineName: jsii.String("CdkPipeline"),
+		// self mutation true - pipeline changes itself before application deployment
+		SelfMutation: jsii.Bool(true),
+		CodeBuildDefaults: &pipelines.CodeBuildOptions{
+			BuildEnvironment: &codebuild.BuildEnvironment{
+				// image version 6.0 recommended for newer go version
+				BuildImage: codebuild.LinuxBuildImage_FromCodeBuildImageId(jsii.String("aws/codebuild/standard:6.0")),
+			},
+		},
+		Synth: pipelines.NewCodeBuildStep(jsii.String("Synth"), &pipelines.CodeBuildStepProps{
+			Input: githubRepo,
+			Commands: &[]*string{
+				jsii.String("npm install -g aws-cdk"),
+				jsii.String("cd cdk"),
+				jsii.String("cdk synth"),
+			},
+		}),
+	})
+
+	// deployment of actual CDK application
+	myPipeline.AddStage(NewCdkApplication(stack, jsii.String("MyApplication"), &awscdk.StageProps{
+		Env: env(),
+	}), &pipelines.AddStageOpts{
+		Post: &[]pipelines.Step{
+			pipelines.NewCodeBuildStep(jsii.String("Manual Steps"), &pipelines.CodeBuildStepProps{
+				Commands: &[]*string{
+					jsii.String("echo \"My CDK App deployed, manual steps go here ... \""),
+				},
+			}),
+		},
+	})
+
+	return stack
+}
+
 func main() {
 	defer jsii.Close()
 
 	app := awscdk.NewApp(nil)
 
+	NewCdkPipeline(app, jsii.String("CdkPipelineStack"), &awscdk.StackProps{
+		Env: env(),
+	})
+
 	//stages := []string{"test", "prod"}
 
 	//for _, stage := range stages {
-	NewNostrAppDataStack(app, prepend("test", "NostrAppDataStack"), &NostrAppDataStackProps{
-		awscdk.StackProps{
-			Env: env(),
-		},
-	})
+	//NewNostrAppDataStack(app, prepend("test", "NostrAppDataStack"), &NostrAppDataStackProps{
+	//	awscdk.StackProps{
+	//		Env: env(),
+	//	},
+	//})
 	//}
 
 	app.Synth(nil)

@@ -7,13 +7,14 @@ import (
 )
 
 type Config struct {
+	Name      string `yaml:"name"`
 	AccountID string `yaml:"account_id"`
 	Region    string `yaml:"region"`
-	Name      string `yaml:"name"`
+	Branch    string `yaml:"branch"`
 }
 
 func MustNewConfig(env string) Config {
-	contents, err := os.ReadFile(env + ".yaml")
+	contents, err := os.ReadFile("config/" + env + ".yaml")
 	if err != nil {
 		panic(err)
 	}

@@ -17,9 +17,9 @@ import (
 	"github.com/superkruger/nostr_app_data/cdk/config"
 )
 
-func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, props *awscdk.StackProps) awscdk.Stack {
+func NewCdkAppStack(scope constructs.Construct, id *string, props *awscdk.StackProps) awscdk.Stack {
 	name := func(name string) string {
-		return fmt.Sprintf("%s-%s-%s", cfg.Name, *id, name)
+		return fmt.Sprintf("%s-%s", *id, name)
 	}
 	stack := awscdk.NewStack(scope, id, props)
 
@@ -55,7 +55,7 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 
 	eventHandler.AddEnvironment(
 		jsii.String("WS_API_ENDPOINT"),
-		jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *props.Env.Region)),
+		jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com", *webSocketApi.ApiId(), *props.Env.Region)),
 		nil)
 
 	//postHandler := lambdaFunction(stack, "Post", "../app/functions/post",
@@ -123,14 +123,17 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 }
 
 func NewCdkApplication(scope constructs.Construct, id *string, cfg config.Config, props *awscdk.StageProps) awscdk.Stage {
+	name := func(name string) string {
+		return fmt.Sprintf("%s-%s", *id, name)
+	}
 	stage := awscdk.NewStage(scope, id, props)
-	_ = NewCdkAppStack(stage, jsii.String("NostrAppDataStack"), cfg, &awscdk.StackProps{Env: props.Env})
+	_ = NewCdkAppStack(stage, jsii.String(name("Stack")), &awscdk.StackProps{Env: props.Env})
 	return stage
 }
 
 func NewCdkPipeline(scope constructs.Construct, id *string, cfg config.Config, props *awscdk.StackProps) awscdk.Stack {
 	name := func(name string) string {
-		return fmt.Sprintf("%s-%s-%s", cfg.Name, *id, name)
+		return fmt.Sprintf("%s-%s", *id, name)
 	}
 	stack := awscdk.NewStack(scope, id, props)
 	// GitHub repo with owner and repository name
@@ -140,8 +143,8 @@ func NewCdkPipeline(scope constructs.Construct, id *string, cfg config.Config, p
 		}),
 	})
 	// self mutating pipeline
-	myPipeline := pipelines.NewCodePipeline(stack, jsii.String(name("CdkPipeline")), &pipelines.CodePipelineProps{
-		PipelineName: jsii.String("BuildPipeline"),
+	myPipeline := pipelines.NewCodePipeline(stack, jsii.String(name("Pipeline")), &pipelines.CodePipelineProps{
+		PipelineName: jsii.String(name("Pipeline")),
 		// self mutation true - pipeline changes itself before application deployment
 		SelfMutation: jsii.Bool(true),
 		CodeBuildDefaults: &pipelines.CodeBuildOptions{
@@ -162,7 +165,7 @@ func NewCdkPipeline(scope constructs.Construct, id *string, cfg config.Config, p
 		}),
 	})
 	// deployment of actual CDK application
-	myPipeline.AddStage(NewCdkApplication(stack, jsii.String("NostrAppData"), cfg, &awscdk.StageProps{
+	myPipeline.AddStage(NewCdkApplication(stack, jsii.String(fmt.Sprintf("%s-%s", cfg.Name, "NostrAppData")), cfg, &awscdk.StageProps{
 		Env: props.Env,
 	}), &pipelines.AddStageOpts{
 		Post: &[]pipelines.Step{
@@ -181,7 +184,7 @@ func main() {
 	app := awscdk.NewApp(nil)
 	envName := app.Node().GetContext(jsii.String("environment"))
 	cfg := config.MustNewConfig(envName.(string))
-	NewCdkPipeline(app, jsii.String("CdkPipelineStack"), cfg, &awscdk.StackProps{
+	NewCdkPipeline(app, jsii.String(fmt.Sprintf("%s-%s", cfg.Name, "PipelineStack")), cfg, &awscdk.StackProps{
 		Env: env(cfg),
 	})
 	app.Synth(nil)

@@ -17,16 +17,19 @@ import (
 	"github.com/superkruger/nostr_app_data/cdk/config"
 )
 
-func NewCdkAppStack(scope constructs.Construct, id *string, props *awscdk.StackProps) awscdk.Stack {
+func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, props *awscdk.StackProps) awscdk.Stack {
+	name := func(name string) string {
+		return fmt.Sprintf("%s-%s-%s", cfg.Name, *id, name)
+	}
 	stack := awscdk.NewStack(scope, id, props)
 
-	connectHandler := lambdaFunction(stack, "Connect", "../app/functions/connect", nil)
-	disconnectHandler := lambdaFunction(stack, "Disconnect", "../app/functions/disconnect", nil)
-	defaultHandler := lambdaFunction(stack, "Default", "../app/functions/default", nil)
-	requestHandler := lambdaFunction(stack, "Request", "../app/functions/request", nil)
-	eventHandler := lambdaFunction(stack, "Event", "../app/functions/event", nil)
+	connectHandler := lambdaFunction(stack, name("Connect"), "../app/functions/connect", nil)
+	disconnectHandler := lambdaFunction(stack, name("Disconnect"), "../app/functions/disconnect", nil)
+	defaultHandler := lambdaFunction(stack, name("Default"), "../app/functions/default", nil)
+	requestHandler := lambdaFunction(stack, name("Request"), "../app/functions/request", nil)
+	eventHandler := lambdaFunction(stack, name("Event"), "../app/functions/event", nil)
 
-	webSocketApi := awsapigatewayv2.NewWebSocketApi(stack, jsii.String("WSSAPI"), &awsapigatewayv2.WebSocketApiProps{
+	webSocketApi := awsapigatewayv2.NewWebSocketApi(stack, jsii.String(name("WSSAPI")), &awsapigatewayv2.WebSocketApiProps{
 		ConnectRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
 			Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("ConnectIntegration"), connectHandler, nil),
 		},
@@ -77,10 +80,10 @@ func NewCdkAppStack(scope constructs.Construct, id *string, props *awscdk.StackP
 	//})
 	//webSocketApi.GrantManageConnections(postHandler)
 
-	awscdk.NewCfnOutput(stack, jsii.String("WSSApiURL"), &awscdk.CfnOutputProps{
+	awscdk.NewCfnOutput(stack, jsii.String(name("WSSApiURL")), &awscdk.CfnOutputProps{
 		Value:       webSocketApi.ApiEndpoint(),
 		Description: jsii.String("the URL to the WSS API"),
-		ExportName:  jsii.String("WSSApiURL"),
+		ExportName:  jsii.String(name("WSSApiURL")),
 	})
 
 	//awscdk.NewCfnOutput(stack, jsii.String("HTTPApiURL"), &awscdk.CfnOutputProps{
@@ -119,13 +122,16 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 	})
 }
 
-func NewCdkApplication(scope constructs.Construct, id *string, props *awscdk.StageProps) awscdk.Stage {
+func NewCdkApplication(scope constructs.Construct, id *string, cfg config.Config, props *awscdk.StageProps) awscdk.Stage {
 	stage := awscdk.NewStage(scope, id, props)
-	_ = NewCdkAppStack(stage, jsii.String("NostrAppDataStack"), &awscdk.StackProps{Env: props.Env})
+	_ = NewCdkAppStack(stage, jsii.String("NostrAppDataStack"), cfg, &awscdk.StackProps{Env: props.Env})
 	return stage
 }
 
 func NewCdkPipeline(scope constructs.Construct, id *string, cfg config.Config, props *awscdk.StackProps) awscdk.Stack {
+	name := func(name string) string {
+		return fmt.Sprintf("%s-%s-%s", cfg.Name, *id, name)
+	}
 	stack := awscdk.NewStack(scope, id, props)
 	// GitHub repo with owner and repository name
 	githubRepo := pipelines.CodePipelineSource_GitHub(jsii.String("superkruger/nostr_app_data"), jsii.String(cfg.Branch), &pipelines.GitHubSourceOptions{
@@ -134,7 +140,7 @@ func NewCdkPipeline(scope constructs.Construct, id *string, cfg config.Config, p
 		}),
 	})
 	// self mutating pipeline
-	myPipeline := pipelines.NewCodePipeline(stack, jsii.String("CdkPipeline"), &pipelines.CodePipelineProps{
+	myPipeline := pipelines.NewCodePipeline(stack, jsii.String(name("CdkPipeline")), &pipelines.CodePipelineProps{
 		PipelineName: jsii.String("BuildPipeline"),
 		// self mutation true - pipeline changes itself before application deployment
 		SelfMutation: jsii.Bool(true),
@@ -156,7 +162,7 @@ func NewCdkPipeline(scope constructs.Construct, id *string, cfg config.Config, p
 		}),
 	})
 	// deployment of actual CDK application
-	myPipeline.AddStage(NewCdkApplication(stack, jsii.String("NostrAppData"), &awscdk.StageProps{
+	myPipeline.AddStage(NewCdkApplication(stack, jsii.String("NostrAppData"), cfg, &awscdk.StageProps{
 		Env: props.Env,
 	}), &pipelines.AddStageOpts{
 		Post: &[]pipelines.Step{
@@ -179,10 +185,6 @@ func main() {
 		Env: env(cfg),
 	})
 	app.Synth(nil)
-}
-
-func prepend(stage, id string) string {
-	return fmt.Sprintf("%s-%s", stage, id)
 }
 
 // env determines the AWS environment (account+region) in which our stack is to

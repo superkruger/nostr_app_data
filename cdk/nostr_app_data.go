@@ -17,6 +17,11 @@ import (
 	"github.com/superkruger/nostr_app_data/cdk/config"
 )
 
+type CDKEnvironment struct {
+	Environment awscdk.Environment
+	Name        string
+}
+
 func NewCdkAppStack(scope constructs.Construct, id *string, props *awscdk.StackProps) awscdk.Stack {
 	stack := awscdk.NewStack(scope, id, props)
 
@@ -125,7 +130,7 @@ func NewCdkApplication(scope constructs.Construct, id *string, props *awscdk.Sta
 	return stage
 }
 
-func NewCdkPipeline(scope constructs.Construct, id *string, props *awscdk.StackProps) awscdk.Stack {
+func NewCdkPipeline(scope constructs.Construct, id *string, environment CDKEnvironment, props *awscdk.StackProps) awscdk.Stack {
 	stack := awscdk.NewStack(scope, id, props)
 	// GitHub repo with owner and repository name
 	githubRepo := pipelines.CodePipelineSource_GitHub(jsii.String("superkruger/nostr_app_data"), jsii.String("master"), &pipelines.GitHubSourceOptions{
@@ -148,7 +153,7 @@ func NewCdkPipeline(scope constructs.Construct, id *string, props *awscdk.StackP
 			Commands: &[]*string{
 				jsii.String("cd cdk"),
 				jsii.String("npm install -g aws-cdk"),
-				jsii.String("cdk synth"),
+				jsii.String("cdk synth --context environment=" + environment.Name),
 				jsii.String("cd .."),
 			},
 			Input:                  githubRepo,
@@ -175,9 +180,9 @@ func main() {
 	app := awscdk.NewApp(nil)
 	envName := app.Node().GetContext(jsii.String("environment"))
 	cfg := config.MustNewConfig(envName.(string))
-
-	NewCdkPipeline(app, jsii.String("CdkPipelineStack"), &awscdk.StackProps{
-		Env: env(cfg),
+	environment := env(cfg)
+	NewCdkPipeline(app, jsii.String("CdkPipelineStack"), environment, &awscdk.StackProps{
+		Env: &environment.Environment,
 	})
 	app.Synth(nil)
 }
@@ -188,7 +193,7 @@ func prepend(stage, id string) string {
 
 // env determines the AWS environment (account+region) in which our stack is to
 // be deployed. For more information see: https://docs.aws.amazon.com/cdk/latest/guide/environments.html
-func env(cfg config.Config) *awscdk.Environment {
+func env(cfg config.Config) CDKEnvironment {
 	// If unspecified, this stack will be "environment-agnostic".
 	// Account/Region-dependent features and context lookups will not work, but a
 	// single synthesized template can be deployed anywhere.
@@ -198,9 +203,12 @@ func env(cfg config.Config) *awscdk.Environment {
 	// Uncomment if you know exactly what account and region you want to deploy
 	// the stack to. This is the recommendation for production stacks.
 	//---------------------------------------------------------------------------
-	return &awscdk.Environment{
-		Account: jsii.String(cfg.AccountID), //jsii.String("418272791745"),
-		Region:  jsii.String(cfg.Region),    //jsii.String("us-east-1"),
+	return CDKEnvironment{
+		Environment: awscdk.Environment{
+			Account: jsii.String(cfg.AccountID), //jsii.String("418272791745"),
+			Region:  jsii.String(cfg.Region),    //jsii.String("us-east-1"),
+		},
+		Name: cfg.Name,
 	}
 
 	// Uncomment to specialize this stack for the AWS Account and Region that are

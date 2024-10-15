@@ -9,6 +9,7 @@ import (
 type Config struct {
 	AccountID string `yaml:"account_id"`
 	Region    string `yaml:"region"`
+	Name      string `yaml:"name"`
 }
 
 func MustNewConfig(env string) Config {

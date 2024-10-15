@@ -17,7 +17,7 @@ import (
 	"github.com/superkruger/nostr_app_data/cdk/config"
 )
 
-func NewCdkAppStack(scope constructs.Construct, id *string, props *awscdk.StackProps) awscdk.Stack {
+func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, props *awscdk.StackProps) awscdk.Stack {
 	name := func(name string) string {
 		return fmt.Sprintf("%s-%s", *id, name)
 	}
@@ -47,11 +47,11 @@ func NewCdkAppStack(scope constructs.Construct, id *string, props *awscdk.StackP
 	webSocketApi.AddRoute(jsii.String("EVENT"), &awsapigatewayv2.WebSocketRouteOptions{
 		Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("EventIntegration"), eventHandler, nil),
 	})
-	//wsStage := awsapigatewayv2.NewWebSocketStage(stack, jsii.String("WSSStage"), &awsapigatewayv2.WebSocketStageProps{
-	//	AutoDeploy:   jsii.Bool(true),
-	//	StageName:    jsii.String("test"),
-	//	WebSocketApi: webSocketApi,
-	//})
+	awsapigatewayv2.NewWebSocketStage(stack, jsii.String("WSSStage"), &awsapigatewayv2.WebSocketStageProps{
+		AutoDeploy:   jsii.Bool(true),
+		StageName:    jsii.String(cfg.Name),
+		WebSocketApi: webSocketApi,
+	})
 
 	eventHandler.AddEnvironment(
 		jsii.String("WS_API_ENDPOINT"),
@@ -127,7 +127,7 @@ func NewCdkApplication(scope constructs.Construct, id *string, cfg config.Config
 		return fmt.Sprintf("%s-%s", *id, name)
 	}
 	stage := awscdk.NewStage(scope, id, props)
-	_ = NewCdkAppStack(stage, jsii.String(name("Stack")), &awscdk.StackProps{Env: props.Env})
+	_ = NewCdkAppStack(stage, jsii.String(name("Stack")), cfg, &awscdk.StackProps{Env: props.Env})
 	return stage
 }
 

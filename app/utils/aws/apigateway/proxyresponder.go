@@ -1,4 +1,7 @@
-package utils
+/*
+Package apigateway contains proxy responder to easily create proxy responses
+*/
+package apigateway
 
 import (
 	"bytes"
@@ -12,11 +15,6 @@ import (
 )
 
 const minCompressSize = 1024
-
-// Response is the response that will marshal to a correct api gateway proxy response
-type Response struct {
-	events.APIGatewayProxyResponse
-}
 
 // ProxyResponder is the responder that gives API Gateway Proxy responses
 type ProxyResponder struct {
@@ -40,6 +38,15 @@ func (r ProxyResponder) WithStatus(statusCode int) Response {
 		response.Headers["Access-Control-Allow-Origin"] = r.originAllowed
 	}
 	return response
+}
+
+/***************
+* The Response *
+****************/
+
+// Response is the response that will marshal to a correct api gateway proxy response
+type Response struct {
+	events.APIGatewayProxyResponse
 }
 
 // WithJSONBody adds the body to the response

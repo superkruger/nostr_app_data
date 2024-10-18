@@ -23,11 +23,19 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	}
 	stack := awscdk.NewStack(scope, id, props)
 
-	connectHandler := lambdaFunction(stack, name("Connect"), "../app/functions/connect", nil)
-	disconnectHandler := lambdaFunction(stack, name("Disconnect"), "../app/functions/disconnect", nil)
+	connectHandler := lambdaFunction(stack, name("Connect"), "../app/functions/connect", map[string]*string{
+		"DB_SECRET": jsii.String(cfg.DBSecret),
+	})
+	disconnectHandler := lambdaFunction(stack, name("Disconnect"), "../app/functions/disconnect", map[string]*string{
+		"DB_SECRET": jsii.String(cfg.DBSecret),
+	})
 	defaultHandler := lambdaFunction(stack, name("Default"), "../app/functions/default", nil)
-	requestHandler := lambdaFunction(stack, name("Request"), "../app/functions/request", nil)
-	eventHandler := lambdaFunction(stack, name("Event"), "../app/functions/event", nil)
+	requestHandler := lambdaFunction(stack, name("Request"), "../app/functions/request", map[string]*string{
+		"DB_SECRET": jsii.String(cfg.DBSecret),
+	})
+	eventHandler := lambdaFunction(stack, name("Event"), "../app/functions/event", map[string]*string{
+		"DB_SECRET": jsii.String(cfg.DBSecret),
+	})
 
 	webSocketApi := awsapigatewayv2.NewWebSocketApi(stack, jsii.String(name("WSSAPI")), &awsapigatewayv2.WebSocketApiProps{
 		ConnectRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{

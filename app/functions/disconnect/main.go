@@ -8,18 +8,18 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
-	"github.com/superkruger/nostr_app_data/app/utils"
+	"github.com/superkruger/nostr_app_data/app/utils/aws/apigateway"
 )
 
 type handler struct {
-	responder utils.ProxyResponder
+	responder apigateway.ProxyResponder
 }
 
 func mustNewHandler() *handler {
 	return &handler{}
 }
 
-func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (utils.Response, error) {
+func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (apigateway.Response, error) {
 	log.Printf("disconnecting: %s", request.RequestContext.ConnectionID)
 	return h.responder.WithStatus(http.StatusOK), nil
 }

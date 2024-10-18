@@ -6,7 +6,6 @@ require (
 	github.com/aws/aws-lambda-go v1.47.0
 	github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi v1.23.2
 	github.com/aws/jsii-runtime-go v1.103.1
-	github.com/superkruger/nostr_app_data/app/utils v0.0.0-20241013095001-c2e0c42e8280
 )
 
 require (
@@ -18,7 +17,6 @@ require (
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/yuin/goldmark v1.4.13 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.20.0 // indirect

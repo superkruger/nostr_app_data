@@ -1,6 +1,7 @@
 go 1.23
 
 use (
+	./app/domain
 	./app/functions/connect
 	./app/functions/default
 	./app/functions/disconnect

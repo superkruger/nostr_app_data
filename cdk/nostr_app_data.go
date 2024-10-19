@@ -176,11 +176,9 @@ func NewCdkPipeline(scope constructs.Construct, id *string, cfg config.Config, p
 		},
 		Synth: pipelines.NewCodeBuildStep(jsii.String("Synth"), &pipelines.CodeBuildStepProps{
 			Commands: &[]*string{
-				//jsii.String("go install golang.org/x/tools/gopls@latest"),
 				jsii.String("cd cdk"),
 				jsii.String("npm install -g aws-cdk"),
 				jsii.String("cdk synth --context environment=" + cfg.Name),
-				jsii.String("cd .."),
 			},
 			Input:                  githubRepo,
 			PrimaryOutputDirectory: jsii.String("cdk/cdk.out"),

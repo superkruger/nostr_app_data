@@ -1,8 +1,6 @@
 module github.com/superkruger/nostr_app_data/cdk
 
-go 1.22.0
-
-toolchain go1.22.2
+go 1.23
 
 require (
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.162.0

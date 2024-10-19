@@ -1,14 +1,8 @@
-go 1.23
+go 1.22.0
+
+toolchain go1.22.2
 
 use (
-	./app/domain
-	./app/functions/connect
-	./app/functions/default
-	./app/functions/disconnect
-	./app/functions/event
-	./app/functions/request
-
-	./app/utils
-
+	./app
 	./cdk
 )

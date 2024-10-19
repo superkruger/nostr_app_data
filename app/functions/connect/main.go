@@ -8,11 +8,11 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-
 	"github.com/superkruger/nostr_app_data/app/domain/connections"
-	"github.com/superkruger/nostr_app_data/app/utils/aws/apigateway"
 	"github.com/superkruger/nostr_app_data/app/utils/env"
 	"github.com/superkruger/nostr_app_data/app/utils/skmongo"
+
+	"github.com/superkruger/nostr_app_data/app/utils/aws/apigateway"
 )
 
 type handler struct {

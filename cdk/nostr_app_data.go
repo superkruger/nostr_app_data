@@ -128,8 +128,7 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 				Command: &[]*string{
 					jsii.String("bash"),
 					jsii.String("-c"),
-					jsii.String("GOCACHE=/tmp go mod tidy && GOCACHE=/tmp GOARCH=arm64 GOOS=linux go build -tags lambda.norpc -o /asset-output/bootstrap " + path),
-					jsii.String("cd -"),
+					jsii.String("GOCACHE=/tmp GOARCH=arm64 GOOS=linux go build -tags lambda.norpc -o /asset-output/bootstrap " + path),
 				},
 			},
 		}),

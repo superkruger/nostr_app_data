@@ -11,11 +11,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi"
 	"github.com/aws/jsii-runtime-go"
 
-	"github.com/superkruger/nostr_app_data/app/utils"
+	"github.com/superkruger/nostr_app_data/app/utils/aws/apigateway"
 )
 
 type handler struct {
-	responder           utils.ProxyResponder
+	responder           apigateway.ProxyResponder
 	managementApiClient *apigatewaymanagementapi.Client
 }
 
@@ -28,7 +28,7 @@ func mustNewHandler() *handler {
 	}
 }
 
-func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (utils.Response, error) {
+func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (apigateway.Response, error) {
 	log.Printf("got event %+v", request)
 	log.Printf("sending events to %s", *h.managementApiClient.Options().BaseEndpoint)
 	// for each connection with a request matching the event

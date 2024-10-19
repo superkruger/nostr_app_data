@@ -2,3 +2,4 @@ name: prod
 account_id: '418272791745'
 region: us-east-1
 branch: master
+db_secret: 'prod/nostr/mongo/rw'

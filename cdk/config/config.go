@@ -11,6 +11,7 @@ type Config struct {
 	AccountID string `yaml:"account_id"`
 	Region    string `yaml:"region"`
 	Branch    string `yaml:"branch"`
+	DBSecret  string `yaml:"db_secret"`
 }
 
 func MustNewConfig(env string) Config {

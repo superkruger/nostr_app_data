@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2integrations"
 	codebuild "github.com/aws/aws-cdk-go/awscdk/v2/awscodebuild"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslogs"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3assets"
@@ -104,6 +105,17 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 }
 
 func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*string) awslambda.Function {
+	lambdaRole := awsiam.NewRole(stack, jsii.String(name+"Role"), &awsiam.RoleProps{
+		AssumedBy: awsiam.NewServicePrincipal(jsii.String("lambda.amazonaws.com"), nil),
+		RoleName:  jsii.String(name + "-lambda-role"),
+	})
+
+	lambdaRole.AddToPolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Actions:   &[]*string{jsii.String("ssm:GetParameter"), jsii.String("secretsmanager:GetSecretValue"), jsii.String("kms:Decrypt")},
+		Effect:    awsiam.Effect_ALLOW,
+		Resources: &[]*string{jsii.String("arn:aws:secretsmanager:*:*")},
+	}))
+
 	awslogs.NewLogGroup(stack, jsii.String(name+"LogGroup"), &awslogs.LogGroupProps{
 		LogGroupName:  jsii.String("/aws/lambda/" + name),
 		Retention:     awslogs.RetentionDays_ONE_WEEK,
@@ -128,6 +140,7 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 		Handler:      jsii.String("bootstrap"),
 		Architecture: awslambda.Architecture_ARM_64(),
 		Environment:  &env,
+		Role:         lambdaRole,
 	})
 }
 

@@ -171,7 +171,7 @@ func NewCdkPipeline(scope constructs.Construct, id *string, cfg config.Config, p
 		CodeBuildDefaults: &pipelines.CodeBuildOptions{
 			BuildEnvironment: &codebuild.BuildEnvironment{
 				// image version 6.0 recommended for newer go version
-				BuildImage: codebuild.LinuxBuildImage_FromCodeBuildImageId(jsii.String("aws/codebuild/standard:6.0")),
+				BuildImage: codebuild.LinuxBuildImage_FromCodeBuildImageId(jsii.String("aws/codebuild/standard:7.0")),
 			},
 		},
 		Synth: pipelines.NewCodeBuildStep(jsii.String("Synth"), &pipelines.CodeBuildStepProps{

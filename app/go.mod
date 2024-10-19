@@ -4,7 +4,7 @@ go 1.22.2
 
 require (
 	github.com/aws/aws-lambda-go v1.41.0
-	github.com/aws/aws-sdk-go v1.55.5
+	github.com/aws/aws-sdk-go v1.47.9
 	github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi v1.23.2
 	github.com/aws/aws-xray-sdk-go v1.8.4
 	github.com/aws/jsii-runtime-go v1.104.0

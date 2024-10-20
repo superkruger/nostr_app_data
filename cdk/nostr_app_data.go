@@ -56,7 +56,7 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	webSocketApi.AddRoute(jsii.String("EVENT"), &awsapigatewayv2.WebSocketRouteOptions{
 		Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("EventIntegration"), eventHandler, nil),
 	})
-	awsapigatewayv2.NewWebSocketStage(stack, jsii.String("WSSStage"), &awsapigatewayv2.WebSocketStageProps{
+	wssStage := awsapigatewayv2.NewWebSocketStage(stack, jsii.String("WSSStage"), &awsapigatewayv2.WebSocketStageProps{
 		AutoDeploy:   jsii.Bool(true),
 		StageName:    jsii.String(cfg.Name),
 		WebSocketApi: webSocketApi,
@@ -64,7 +64,7 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 
 	eventHandler.AddEnvironment(
 		jsii.String("WS_API_ENDPOINT"),
-		jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com", *webSocketApi.ApiId(), *props.Env.Region)),
+		jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *props.Env.Region, *wssStage.StageName())),
 		nil)
 
 	//postHandler := lambdaFunction(stack, "Post", "../app/functions/post",
@@ -121,7 +121,7 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 		Retention:     awslogs.RetentionDays_ONE_WEEK,
 		RemovalPolicy: awscdk.RemovalPolicy_DESTROY,
 	})
-	return awslambda.NewFunction(stack, jsii.String(name+"Function"), &awslambda.FunctionProps{
+	return awslambda.NewFunction(stack, jsii.String(name+"Func"), &awslambda.FunctionProps{
 		Code: awslambda.Code_FromAsset(jsii.String("../app"), &awss3assets.AssetOptions{
 			Bundling: &awscdk.BundlingOptions{
 				Image: awscdk.DockerImage_FromRegistry(jsii.String("golang:1.21.0")),

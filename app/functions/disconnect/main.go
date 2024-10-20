@@ -41,5 +41,5 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 
 func main() {
 	h := mustNewHandler()
-	lambda.Start(h.handleRequest)
+	lambda.StartWithOptions(h.handleRequest, lambda.WithEnableSIGTERM(h.shutdown))
 }

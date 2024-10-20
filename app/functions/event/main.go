@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/superkruger/nostr_app_data/app/domain/connections"
+	"github.com/superkruger/nostr_app_data/app/utils/env"
+	"github.com/superkruger/nostr_app_data/app/utils/skmongo"
 
 	"github.com/superkruger/nostr_app_data/app/utils/aws/apigateway"
 )
@@ -23,11 +25,16 @@ type handler struct {
 }
 
 func mustNewHandler() *handler {
+	db, closeDb := skmongo.MustFromSecretWithClose(env.MustGetString("DB_SECRET"))
 	return &handler{
 		managementApiClient: apigatewaymanagementapi.New(apigatewaymanagementapi.Options{
 			BaseEndpoint: jsii.String(os.Getenv("WS_API_ENDPOINT")),
 			Region:       os.Getenv("AWS_REGION"),
 		}),
+		connService: connections.NewService(connections.WithRepo(connections.NewRepository(db))),
+		shutdown: func() {
+			closeDb()
+		},
 	}
 }
 
@@ -58,5 +65,5 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 
 func main() {
 	h := mustNewHandler()
-	lambda.Start(h.handleRequest)
+	lambda.StartWithOptions(h.handleRequest, lambda.WithEnableSIGTERM(h.shutdown))
 }

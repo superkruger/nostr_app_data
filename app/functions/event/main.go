@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -25,11 +24,13 @@ type handler struct {
 }
 
 func mustNewHandler() *handler {
+	log.Println("WS_API_ENDPOINT", env.MustGetString("WS_API_ENDPOINT"))
+	log.Println("AWS_REGION", env.MustGetString("AWS_REGION"))
 	db, closeDb := skmongo.MustFromSecretWithClose(env.MustGetString("DB_SECRET"))
 	return &handler{
 		managementApiClient: apigatewaymanagementapi.New(apigatewaymanagementapi.Options{
-			BaseEndpoint: jsii.String(os.Getenv("WS_API_ENDPOINT")),
-			Region:       os.Getenv("AWS_REGION"),
+			BaseEndpoint: jsii.String(env.MustGetString("WS_API_ENDPOINT")),
+			Region:       env.MustGetString("AWS_REGION"),
 		}),
 		connService: connections.NewService(connections.WithRepo(connections.NewRepository(db))),
 		shutdown: func() {
@@ -50,6 +51,7 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 		if request.RequestContext.ConnectionID == conn.ID {
 			continue
 		}
+		log.Printf("sending event %s to %s", request.Body, conn.ID)
 		res, err := h.managementApiClient.PostToConnection(ctx, &apigatewaymanagementapi.PostToConnectionInput{
 			ConnectionId: &conn.ID,
 			Data:         []byte(request.Body),

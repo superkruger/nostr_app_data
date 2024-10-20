@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -17,10 +18,10 @@ import (
 )
 
 type handler struct {
-	responder           apigateway.ProxyResponder
-	managementApiClient *apigatewaymanagementapi.Client
-	connService         connections.Service
-	shutdown            func()
+	responder apigateway.ProxyResponder
+	//managementApiClient *apigatewaymanagementapi.Client
+	connService connections.Service
+	shutdown    func()
 }
 
 func mustNewHandler() *handler {
@@ -28,10 +29,10 @@ func mustNewHandler() *handler {
 	log.Println("AWS_REGION", env.MustGetString("AWS_REGION"))
 	db, closeDb := skmongo.MustFromSecretWithClose(env.MustGetString("DB_SECRET"))
 	return &handler{
-		managementApiClient: apigatewaymanagementapi.New(apigatewaymanagementapi.Options{
-			BaseEndpoint: jsii.String(env.MustGetString("WS_API_ENDPOINT")),
-			Region:       env.MustGetString("AWS_REGION"),
-		}),
+		//managementApiClient: apigatewaymanagementapi.New(apigatewaymanagementapi.Options{
+		//	BaseEndpoint: jsii.String(env.MustGetString("WS_API_ENDPOINT")),
+		//	Region:       env.MustGetString("AWS_REGION"),
+		//}),
 		connService: connections.NewService(connections.WithRepo(connections.NewRepository(db))),
 		shutdown: func() {
 			closeDb()
@@ -41,19 +42,25 @@ func mustNewHandler() *handler {
 
 func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (apigateway.Response, error) {
 	log.Printf("got event %+v", request)
-	log.Printf("sending events to %s", *h.managementApiClient.Options().BaseEndpoint)
+
+	api := apigatewaymanagementapi.New(apigatewaymanagementapi.Options{
+		BaseEndpoint: jsii.String(fmt.Sprintf("https://%s/%s", request.RequestContext.DomainName, request.RequestContext.Stage)),
+		Region:       env.MustGetString("AWS_REGION"),
+	})
+
+	log.Printf("sending events to %s", *api.Options().BaseEndpoint)
 	conns, err := h.connService.All(ctx)
 	if err != nil {
 		log.Printf("error getting connections: %v", err)
 		return h.responder.WithStatus(http.StatusInternalServerError), nil
 	}
 	for _, conn := range conns {
-		if request.RequestContext.ConnectionID == conn.ID {
-			continue
-		}
+		//if request.RequestContext.ConnectionID == conn.ID {
+		//	continue
+		//}
 		log.Printf("sending event %s to %s", request.Body, conn.ID)
-		res, err := h.managementApiClient.PostToConnection(ctx, &apigatewaymanagementapi.PostToConnectionInput{
-			ConnectionId: &conn.ID,
+		res, err := api.PostToConnection(ctx, &apigatewaymanagementapi.PostToConnectionInput{
+			ConnectionId: jsii.String(conn.ID),
 			Data:         []byte(request.Body),
 		})
 		if err != nil {

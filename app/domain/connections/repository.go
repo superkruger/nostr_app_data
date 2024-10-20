@@ -21,6 +21,7 @@ type connection struct {
 type Repository interface {
 	add(ctx context.Context, con connection) error
 	remove(ctx context.Context, id string) error
+	all(ctx context.Context) ([]connection, error)
 }
 
 type repository struct {
@@ -51,4 +52,16 @@ func (r *repository) remove(ctx context.Context, id string) error {
 		_, err := r.c.DeleteOne(ctx1, bson.M{"id": id})
 		return err
 	})
+}
+
+func (r *repository) all(ctx context.Context) ([]connection, error) {
+	var res []connection
+	err := xray.Capture(ctx, "DB - all connections", func(ctx1 context.Context) error {
+		cursor, err := r.c.Find(ctx1, bson.M{})
+		if err != nil {
+			return err
+		}
+		return cursor.All(ctx1, &res)
+	})
+	return res, err
 }

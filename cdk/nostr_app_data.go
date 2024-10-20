@@ -105,23 +105,12 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 }
 
 func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*string) awslambda.Function {
-	lambdaRole := awsiam.NewRole(stack, jsii.String(name+"Role"), &awsiam.RoleProps{
-		AssumedBy: awsiam.NewServicePrincipal(jsii.String("lambda.amazonaws.com"), nil),
-		RoleName:  jsii.String(name + "-lambda-role"),
-	})
-
-	lambdaRole.AddToPolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-		Actions:   &[]*string{jsii.String("ssm:GetParameter"), jsii.String("secretsmanager:GetSecretValue"), jsii.String("kms:Decrypt")},
-		Effect:    awsiam.Effect_ALLOW,
-		Resources: &[]*string{jsii.String("arn:aws:secretsmanager:*:*")},
-	}))
-
 	awslogs.NewLogGroup(stack, jsii.String(name+"LogGroup"), &awslogs.LogGroupProps{
 		LogGroupName:  jsii.String("/aws/lambda/" + name),
 		Retention:     awslogs.RetentionDays_ONE_WEEK,
 		RemovalPolicy: awscdk.RemovalPolicy_DESTROY,
 	})
-	return awslambda.NewFunction(stack, jsii.String(name+"Func"), &awslambda.FunctionProps{
+	lambda := awslambda.NewFunction(stack, jsii.String(name+"Func"), &awslambda.FunctionProps{
 		Code: awslambda.Code_FromAsset(jsii.String("../app"), &awss3assets.AssetOptions{
 			Bundling: &awscdk.BundlingOptions{
 				Image: awscdk.DockerImage_FromRegistry(jsii.String("golang:1.21.0")),
@@ -139,8 +128,13 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 		Handler:      jsii.String("bootstrap"),
 		Architecture: awslambda.Architecture_ARM_64(),
 		Environment:  &env,
-		Role:         lambdaRole,
 	})
+	lambda.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Actions:   &[]*string{jsii.String("ssm:GetParameter"), jsii.String("secretsmanager:GetSecretValue"), jsii.String("kms:Decrypt")},
+		Effect:    awsiam.Effect_ALLOW,
+		Resources: &[]*string{jsii.String("arn:aws:secretsmanager:*:*")},
+	}))
+	return lambda
 }
 
 func NewCdkApplication(scope constructs.Construct, id *string, cfg config.Config, props *awscdk.StageProps) awscdk.Stage {

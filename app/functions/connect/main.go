@@ -34,7 +34,7 @@ func mustNewHandler() *handler {
 func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (apigateway.Response, error) {
 	log.Printf("got request %+v", request)
 	log.Printf("connecting: %s", request.RequestContext.ConnectionID)
-	if err := h.service.AddConnection(ctx, request.RequestContext.ConnectionID, time.Now()); err != nil {
+	if err := h.service.Add(ctx, request.RequestContext.ConnectionID, time.Now()); err != nil {
 		log.Printf("error adding connection: %v", err)
 		return h.responder.WithStatus(http.StatusInternalServerError), nil
 	}

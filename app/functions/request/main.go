@@ -7,12 +7,15 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/superkruger/nostr_app_data/app/domain/connections"
 
 	"github.com/superkruger/nostr_app_data/app/utils/aws/apigateway"
 )
 
 type handler struct {
-	responder apigateway.ProxyResponder
+	responder   apigateway.ProxyResponder
+	connService connections.Service
+	shutdown    func()
 }
 
 func mustNewHandler() *handler {

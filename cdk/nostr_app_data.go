@@ -64,7 +64,7 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 
 	eventHandler.AddEnvironment(
 		jsii.String("WS_API_ENDPOINT"),
-		jsii.String(fmt.Sprintf("wss://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *props.Env.Region, *wssStage.StageName())),
+		jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *props.Env.Region, *wssStage.StageName())),
 		nil)
 
 	//postHandler := lambdaFunction(stack, "Post", "../app/functions/post",

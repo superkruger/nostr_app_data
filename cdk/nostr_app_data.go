@@ -87,7 +87,7 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	//	Path:        jsii.String("/"),
 	//	Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_POST},
 	//})
-	webSocketApi.GrantManageConnections(eventHandler)
+	//webSocketApi.GrantManageConnections(eventHandler)
 
 	awscdk.NewCfnOutput(stack, jsii.String(name("WSSApiURL")), &awscdk.CfnOutputProps{
 		Value:       webSocketApi.ApiEndpoint(),

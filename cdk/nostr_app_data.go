@@ -132,7 +132,7 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 	lambda.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
 		Actions: &[]*string{
 			jsii.String("ssm:GetParameter"), jsii.String("secretsmanager:GetSecretValue"), jsii.String("kms:Decrypt"),
-			jsii.String("execute-api:ManageConnections"),
+			jsii.String("execute-api:ManageConnections"), jsii.String("execute-api:Invoke"),
 		},
 		Effect: awsiam.Effect_ALLOW,
 		Resources: &[]*string{

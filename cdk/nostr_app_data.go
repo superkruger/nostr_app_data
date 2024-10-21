@@ -121,7 +121,7 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 				},
 			},
 		}),
-		FunctionName: jsii.String(name),
+		FunctionName: jsii.String(name + "Func"),
 		Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
 		MemorySize:   jsii.Number(128),
 		Timeout:      awscdk.Duration_Seconds(jsii.Number(3)),
@@ -130,15 +130,21 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 		Environment:  &env,
 	})
 	lambda.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-		Actions:   &[]*string{jsii.String("ssm:GetParameter"), jsii.String("secretsmanager:GetSecretValue"), jsii.String("kms:Decrypt")},
-		Effect:    awsiam.Effect_ALLOW,
-		Resources: &[]*string{jsii.String("arn:aws:secretsmanager:*:*")},
+		Actions: &[]*string{
+			jsii.String("ssm:GetParameter"), jsii.String("secretsmanager:GetSecretValue"), jsii.String("kms:Decrypt"),
+			jsii.String("execute-api:ManageConnections"),
+		},
+		Effect: awsiam.Effect_ALLOW,
+		Resources: &[]*string{
+			jsii.String("arn:aws:secretsmanager:*:*"),
+			jsii.String("arn:aws:execute-api:*:*"),
+		},
 	}))
-	lambda.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-		Actions:   &[]*string{jsii.String("execute-api:ManageConnections")},
-		Effect:    awsiam.Effect_ALLOW,
-		Resources: &[]*string{jsii.String("arn:aws:execute-api:*:*")},
-	}))
+	//lambda.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+	//	Actions:   &[]*string{jsii.String("execute-api:ManageConnections")},
+	//	Effect:    awsiam.Effect_ALLOW,
+	//	Resources: &[]*string{jsii.String("arn:aws:execute-api:*:*")},
+	//}))
 	return lambda
 }
 

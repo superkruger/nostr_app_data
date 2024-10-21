@@ -24,17 +24,17 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	}
 	stack := awscdk.NewStack(scope, id, props)
 
-	connectHandler := lambdaFunction(stack, name("Connect"), "./functions/connect", map[string]*string{
+	connectHandler := lambdaFunction(stack, name("Connect"), "./functions/connect", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
-	disconnectHandler := lambdaFunction(stack, name("Disconnect"), "./functions/disconnect", map[string]*string{
+	disconnectHandler := lambdaFunction(stack, name("Disconnect"), "./functions/disconnect", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
-	defaultHandler := lambdaFunction(stack, name("Default"), "./functions/default", nil)
-	requestHandler := lambdaFunction(stack, name("Request"), "./functions/request", map[string]*string{
+	defaultHandler := lambdaFunction(stack, name("Default"), "./functions/default", cfg, nil)
+	requestHandler := lambdaFunction(stack, name("Request"), "./functions/request", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
-	eventHandler := lambdaFunction(stack, name("Event"), "./functions/event", map[string]*string{
+	eventHandler := lambdaFunction(stack, name("Event"), "./functions/event", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
 
@@ -104,7 +104,7 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	return stack
 }
 
-func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*string) awslambda.Function {
+func lambdaFunction(stack awscdk.Stack, name, path string, cfg config.Config, env map[string]*string) awslambda.Function {
 	awslogs.NewLogGroup(stack, jsii.String(name+"LogGroup"), &awslogs.LogGroupProps{
 		LogGroupName:  jsii.String("/aws/lambda/" + name),
 		Retention:     awslogs.RetentionDays_ONE_WEEK,
@@ -137,7 +137,7 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 	lambda.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
 		Actions:   &[]*string{jsii.String("execute-api:ManageConnections"), jsii.String("execute-api:Invoke")},
 		Effect:    awsiam.Effect_ALLOW,
-		Resources: &[]*string{jsii.String("arn:aws:execute-api:*:*")},
+		Resources: &[]*string{jsii.String("arn:aws:execute-api:" + cfg.Region + ":" + cfg.AccountID + ":*")},
 	}))
 	return lambda
 }

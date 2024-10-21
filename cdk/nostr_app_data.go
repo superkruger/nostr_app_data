@@ -134,6 +134,11 @@ func lambdaFunction(stack awscdk.Stack, name, path string, env map[string]*strin
 		Effect:    awsiam.Effect_ALLOW,
 		Resources: &[]*string{jsii.String("arn:aws:secretsmanager:*:*")},
 	}))
+	lambda.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Actions:   &[]*string{jsii.String("execute-api:ManageConnections")},
+		Effect:    awsiam.Effect_ALLOW,
+		Resources: &[]*string{jsii.String("arn:aws:execute-api:*:*")},
+	}))
 	return lambda
 }
 

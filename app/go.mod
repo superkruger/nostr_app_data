@@ -5,7 +5,6 @@ go 1.21
 require (
 	github.com/aws/aws-lambda-go v1.41.0
 	github.com/aws/aws-sdk-go v1.47.9
-	github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi v1.23.2
 	github.com/aws/aws-xray-sdk-go v1.8.4
 	github.com/aws/jsii-runtime-go v1.103.1
 	github.com/go-test/deep v1.1.1
@@ -17,10 +16,6 @@ require (
 require (
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/andybalholm/brotli v1.0.6 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.32.2 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.21 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.21 // indirect
-	github.com/aws/smithy-go v1.22.0 // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect

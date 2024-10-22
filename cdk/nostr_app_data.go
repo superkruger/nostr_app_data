@@ -66,6 +66,7 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 		jsii.String("WS_API_ENDPOINT"),
 		jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *props.Env.Region, *wssStage.StageName())),
 		nil)
+	fmt.Printf("WS ARN %s\n", *webSocketApi.ArnForExecuteApi(jsii.String("POST"), jsii.String("/*"), jsii.String("test")))
 
 	//postHandler := lambdaFunction(stack, "Post", "../app/functions/post",
 	//	map[string]*string{"WS_API_ENDPOINT": jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *env().Region, *wsStage.StageName()))})
@@ -135,9 +136,12 @@ func lambdaFunction(stack awscdk.Stack, name, path string, cfg config.Config, en
 		Resources: &[]*string{jsii.String("arn:aws:secretsmanager:*:*")},
 	}))
 	lambda.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-		Actions:   &[]*string{jsii.String("execute-api:ManageConnections"), jsii.String("execute-api:Invoke")},
-		Effect:    awsiam.Effect_ALLOW,
-		Resources: &[]*string{jsii.String("arn:aws:execute-api:" + cfg.Region + ":" + cfg.AccountID + ":*")},
+		Actions: &[]*string{jsii.String("execute-api:ManageConnections"), jsii.String("execute-api:Invoke")},
+		Effect:  awsiam.Effect_ALLOW,
+		Resources: &[]*string{
+			//jsii.String("arn:aws:execute-api:" + cfg.Region + ":" + cfg.AccountID + ":*")
+			jsii.String("arn:aws:execute-api:us-east-1:418272791745:*/test/*/*"),
+		},
 	}))
 	return lambda
 }

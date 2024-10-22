@@ -32,7 +32,11 @@ func mustNewHandler() *handler {
 	db, closeDb := skmongo.MustFromSecretWithClose(env.MustGetString("DB_SECRET"))
 	sess := session.Must(session.NewSession())
 	return &handler{
-		managementApiClient: apigatewaymanagementapi.New(sess, aws.NewConfig().WithRegion(env.MustGetString("AWS_REGION"))),
+		managementApiClient: apigatewaymanagementapi.New(
+			sess,
+			aws.NewConfig().
+				WithRegion(env.MustGetString("AWS_REGION")).
+				WithEndpoint(env.MustGetString("WS_API_ENDPOINT"))),
 		//managementApiClient: apigatewaymanagementapi.New(apigatewaymanagementapi.Options{
 		//	BaseEndpoint: jsii.String(env.MustGetString("WS_API_ENDPOINT")),
 		//	Region:       env.MustGetString("AWS_REGION"),

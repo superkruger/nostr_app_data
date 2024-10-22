@@ -32,10 +32,10 @@ func mustNewHandler() *handler {
 
 func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (apigateway.Response, error) {
 	log.Printf("disconnecting: %s", request.RequestContext.ConnectionID)
-	//if err := h.service.Remove(ctx, request.RequestContext.ConnectionID); err != nil {
-	//	log.Printf("error removing connection: %v", err)
-	//	return h.responder.WithStatus(http.StatusInternalServerError), nil
-	//}
+	if err := h.service.Remove(ctx, request.RequestContext.ConnectionID); err != nil {
+		log.Printf("error removing connection: %v", err)
+		return h.responder.WithStatus(http.StatusInternalServerError), nil
+	}
 	return h.responder.WithStatus(http.StatusOK), nil
 }
 

@@ -135,14 +135,14 @@ func lambdaFunction(stack awscdk.Stack, name, path string, cfg config.Config, en
 		Effect:    awsiam.Effect_ALLOW,
 		Resources: &[]*string{jsii.String("arn:aws:secretsmanager:*:*")},
 	}))
-	lambda.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-		Actions: &[]*string{jsii.String("execute-api:ManageConnections"), jsii.String("execute-api:Invoke")},
-		Effect:  awsiam.Effect_ALLOW,
-		Resources: &[]*string{
-			//jsii.String("arn:aws:execute-api:" + cfg.Region + ":" + cfg.AccountID + ":*")
-			jsii.String("arn:aws:execute-api:us-east-1:418272791745:*/test/*/*"),
-		},
-	}))
+	//lambda.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+	//	Actions: &[]*string{jsii.String("execute-api:ManageConnections"), jsii.String("execute-api:Invoke")},
+	//	Effect:  awsiam.Effect_ALLOW,
+	//	Resources: &[]*string{
+	//		jsii.String("arn:aws:execute-api:" + cfg.Region + ":" + cfg.AccountID + ":"+cfg.Name),
+	//		//jsii.String("arn:aws:execute-api:us-east-1:418272791745:*/test/*/*"),
+	//	},
+	//}))
 	return lambda
 }
 

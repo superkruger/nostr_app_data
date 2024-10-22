@@ -21,9 +21,8 @@ import (
 type handler struct {
 	responder           apigateway.ProxyResponder
 	managementApiClient *apigatewaymanagementapi.ApiGatewayManagementApi
-	//managementApiClient *apigatewaymanagementapi.Client
-	connService connections.Service
-	shutdown    func()
+	connService         connections.Service
+	shutdown            func()
 }
 
 func mustNewHandler() *handler {
@@ -37,10 +36,6 @@ func mustNewHandler() *handler {
 			aws.NewConfig().
 				WithRegion(env.MustGetString("AWS_REGION")).
 				WithEndpoint(env.MustGetString("WS_API_ENDPOINT"))),
-		//managementApiClient: apigatewaymanagementapi.New(apigatewaymanagementapi.Options{
-		//	BaseEndpoint: jsii.String(env.MustGetString("WS_API_ENDPOINT")),
-		//	Region:       env.MustGetString("AWS_REGION"),
-		//}),
 		connService: connections.NewService(connections.WithRepo(connections.NewRepository(db))),
 		shutdown: func() {
 			closeDb()
@@ -50,12 +45,6 @@ func mustNewHandler() *handler {
 
 func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (apigateway.Response, error) {
 	log.Printf("got event %+v", request)
-
-	//api := apigatewaymanagementapi.New(apigatewaymanagementapi.Options{
-	//	BaseEndpoint: jsii.String(fmt.Sprintf("https://%s/%s", request.RequestContext.DomainName, request.RequestContext.Stage)),
-	//	Region:       env.MustGetString("AWS_REGION"),
-	//})
-
 	log.Printf("sending events to %s", h.managementApiClient.Endpoint)
 	conns, err := h.connService.All(ctx)
 	if err != nil {
@@ -67,19 +56,14 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 		//	continue
 		//}
 		log.Printf("sending event %s to %s", request.Body, conn.ID)
-		res, err := h.managementApiClient.PostToConnection(&apigatewaymanagementapi.PostToConnectionInput{
+		_, err := h.managementApiClient.PostToConnection(&apigatewaymanagementapi.PostToConnectionInput{
 			ConnectionId: jsii.String(conn.ID),
 			Data:         []byte(request.Body),
 		})
-		//res, err := h.managementApiClient.PostToConnection(ctx, &apigatewaymanagementapi.PostToConnectionInput{
-		//	ConnectionId: jsii.String(conn.ID),
-		//	Data:         []byte(request.Body),
-		//})
 		if err != nil {
 			log.Printf("error posting to connection: %v", err)
-			return h.responder.WithStatus(http.StatusInternalServerError), nil
+			_ = h.connService.Remove(ctx, conn.ID)
 		}
-		log.Printf("post result %+v", res)
 	}
 	return h.responder.WithStatus(http.StatusOK), nil
 }

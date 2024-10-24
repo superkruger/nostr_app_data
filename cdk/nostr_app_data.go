@@ -107,7 +107,7 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 
 func lambdaFunction(stack awscdk.Stack, name, path string, cfg config.Config, env map[string]*string) awslambda.Function {
 	awslogs.NewLogGroup(stack, jsii.String(name+"LogGroup"), &awslogs.LogGroupProps{
-		LogGroupName:  jsii.String("/aws/lambda/" + name),
+		LogGroupName:  jsii.String("/aws/lambda/" + name + "Func"),
 		Retention:     awslogs.RetentionDays_ONE_WEEK,
 		RemovalPolicy: awscdk.RemovalPolicy_DESTROY,
 	})

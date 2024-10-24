@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/apigatewaymanagementapi"
-	"github.com/aws/jsii-runtime-go"
 	"github.com/superkruger/nostr_app_data/app/domain/connections"
 	"github.com/superkruger/nostr_app_data/app/utils/env"
 	"github.com/superkruger/nostr_app_data/app/utils/skmongo"
@@ -44,27 +43,27 @@ func mustNewHandler() *handler {
 }
 
 func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (apigateway.Response, error) {
-	log.Printf("got event %+v", request)
-	log.Printf("sending events to %s", h.managementApiClient.Endpoint)
-	conns, err := h.connService.All(ctx)
-	if err != nil {
-		log.Printf("error getting connections: %v", err)
-		return h.responder.WithStatus(http.StatusInternalServerError), nil
-	}
-	for _, conn := range conns {
-		//if request.RequestContext.ConnectionID == conn.ID {
-		//	continue
-		//}
-		log.Printf("sending event %s to %s", request.Body, conn.ID)
-		_, err := h.managementApiClient.PostToConnection(&apigatewaymanagementapi.PostToConnectionInput{
-			ConnectionId: jsii.String(conn.ID),
-			Data:         []byte(request.Body),
-		})
-		if err != nil {
-			log.Printf("error posting to connection: %v", err)
-			_ = h.connService.Remove(ctx, conn.ID)
-		}
-	}
+	log.Printf("got event %+v", request.Body)
+	//log.Printf("sending events to %s", h.managementApiClient.Endpoint)
+	//conns, err := h.connService.All(ctx)
+	//if err != nil {
+	//	log.Printf("error getting connections: %v", err)
+	//	return h.responder.WithStatus(http.StatusInternalServerError), nil
+	//}
+	//for _, conn := range conns {
+	//	//if request.RequestContext.ConnectionID == conn.ID {
+	//	//	continue
+	//	//}
+	//	log.Printf("sending event %s to %s", request.Body, conn.ID)
+	//	_, err := h.managementApiClient.PostToConnection(&apigatewaymanagementapi.PostToConnectionInput{
+	//		ConnectionId: jsii.String(conn.ID),
+	//		Data:         []byte(request.Body),
+	//	})
+	//	if err != nil {
+	//		log.Printf("error posting to connection: %v", err)
+	//		_ = h.connService.Remove(ctx, conn.ID)
+	//	}
+	//}
 	return h.responder.WithStatus(http.StatusOK), nil
 }
 

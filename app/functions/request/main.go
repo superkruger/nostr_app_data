@@ -31,7 +31,7 @@ func mustNewHandler() *handler {
 }
 
 func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (apigateway.Response, error) {
-	log.Printf("got request %+v", request)
+	log.Printf("got request %+v", request.Body)
 	return h.responder.WithStatus(http.StatusOK), nil
 }
 

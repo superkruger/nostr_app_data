@@ -1,0 +1,13 @@
+[{
+  "createIndexes": "connections",
+  "indexes": [
+    {
+      "key":{
+        "id" : 1
+      },
+      "name": "id",
+      "unique": true,
+      "background": true
+    }
+  ]
+}]

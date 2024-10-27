@@ -73,7 +73,7 @@ func manager() *secretsmanager.SecretsManager {
 	if _, ok := os.LookupEnv("AWS_REGION"); ok {
 		sess = session.Must(session.NewSession())
 	} else {
-		sess = session.Must(session.NewSession(&aws.Config{Region: aws.String("eu-west-1")}))
+		sess = session.Must(session.NewSession(&aws.Config{Region: aws.String("us-east-1")}))
 	}
 	return secretsmanager.New(sess)
 }

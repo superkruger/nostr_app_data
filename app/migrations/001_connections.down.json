@@ -1,0 +1,6 @@
+[
+  {
+    "dropIndexes": "connections",
+    "index": "id"
+  }
+]

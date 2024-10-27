@@ -10,7 +10,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/apigatewaymanagementapi"
-	"github.com/superkruger/nostr_app_data/app/domain/connections"
+	"github.com/goccy/go-json"
+
+	conns "github.com/superkruger/nostr_app_data/app/domain/connections"
+	evts "github.com/superkruger/nostr_app_data/app/domain/events"
 	"github.com/superkruger/nostr_app_data/app/utils/env"
 	"github.com/superkruger/nostr_app_data/app/utils/skmongo"
 
@@ -20,7 +23,8 @@ import (
 type handler struct {
 	responder           apigateway.ProxyResponder
 	managementApiClient *apigatewaymanagementapi.ApiGatewayManagementApi
-	connService         connections.Service
+	connService         conns.Service
+	evtService          evts.Service
 	shutdown            func()
 }
 
@@ -35,7 +39,8 @@ func mustNewHandler() *handler {
 			aws.NewConfig().
 				WithRegion(env.MustGetString("AWS_REGION")).
 				WithEndpoint(env.MustGetString("WS_API_ENDPOINT"))),
-		connService: connections.NewService(connections.WithRepo(connections.NewRepository(db))),
+		connService: conns.NewService(conns.WithRepo(conns.NewRepository(db))),
+		evtService:  evts.NewService(evts.WithRepo(evts.NewRepository(db))),
 		shutdown: func() {
 			closeDb()
 		},
@@ -44,6 +49,27 @@ func mustNewHandler() *handler {
 
 func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (apigateway.Response, error) {
 	log.Printf("got event %+v", request.Body)
+
+	var raw []json.RawMessage
+	if err := json.Unmarshal([]byte(request.Body), &raw); err != nil {
+		log.Printf("failed to unmarshal request body: %v", err)
+		return h.responder.WithStatus(http.StatusBadRequest), nil
+	}
+	if len(raw) != 2 {
+		log.Printf("expected a length of 2")
+		return h.responder.WithStatus(http.StatusBadRequest), nil
+	}
+	var e evts.Event
+	if err := json.Unmarshal(raw[1], &e); err != nil {
+		log.Printf("failed to unmarshal event: %v", err)
+		return h.responder.WithStatus(http.StatusBadRequest), nil
+	}
+
+	if err := h.evtService.Add(ctx, e); err != nil {
+		log.Printf("failed to add event: %v", err)
+		return h.responder.WithStatus(http.StatusInternalServerError), nil
+	}
+
 	//log.Printf("sending events to %s", h.managementApiClient.Endpoint)
 	//conns, err := h.connService.All(ctx)
 	//if err != nil {

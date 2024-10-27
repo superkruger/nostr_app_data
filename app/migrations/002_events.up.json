@@ -8,6 +8,13 @@
       "name": "id",
       "unique": true,
       "background": true
+    },
+    {
+      "key":{
+        "tags.e.values" : 1
+      },
+      "name": "tags_e",
+      "background": true
     }
   ]
 }]

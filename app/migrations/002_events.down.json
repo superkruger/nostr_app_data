@@ -2,5 +2,9 @@
   {
     "dropIndexes": "events",
     "index": "id"
+  },
+  {
+    "dropIndexes": "events",
+    "index": "tags_e"
   }
 ]

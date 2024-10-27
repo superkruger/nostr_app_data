@@ -37,7 +37,7 @@ func NewRepository(db skmongo.Mongo) Repository {
 
 func (r *repository) add(ctx context.Context, event DBEvent) error {
 	return xray.Capture(ctx, "DB - add event", func(ctx1 context.Context) error {
-		_, err := r.c.UpdateOne(ctx1, bson.M{"id": event.ID}, event, &options.UpdateOptions{Upsert: jsii.Bool(true)})
+		_, err := r.c.UpdateOne(ctx1, bson.M{"id": event.ID}, bson.M{"$set": event}, &options.UpdateOptions{Upsert: jsii.Bool(true)})
 		return err
 	})
 }

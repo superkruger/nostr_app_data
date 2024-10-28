@@ -31,11 +31,17 @@ func (f *Filter) UnmarshalJSON(data []byte) error {
 	for k, v := range jsonValue {
 		switch k {
 		case "ids":
-			f.Ids = v.([]string)
+			for _, v := range v.([]interface{}) {
+				f.Ids = append(f.Ids, v.(string))
+			}
 		case "authors":
-			f.Authors = v.([]string)
+			for _, v := range v.([]interface{}) {
+				f.Authors = append(f.Authors, v.(string))
+			}
 		case "kinds":
-			f.Kinds = v.([]int)
+			for _, val := range v.([]interface{}) {
+				f.Kinds = append(f.Kinds, val.(int))
+			}
 		case "since":
 			f.Since = v.(int)
 		case "until":
@@ -49,7 +55,10 @@ func (f *Filter) UnmarshalJSON(data []byte) error {
 			if f.Tags == nil {
 				f.Tags = make(map[string][]string)
 			}
-			f.Tags[strings.TrimPrefix(k, "#")] = v.([]string)
+			tagName := strings.TrimPrefix(k, "#")
+			for _, val := range v.([]interface{}) {
+				f.Tags[tagName] = append(f.Tags[tagName], val.(string))
+			}
 		}
 	}
 	return nil

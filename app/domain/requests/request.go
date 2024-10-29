@@ -7,59 +7,68 @@ import (
 )
 
 type Request struct {
-	ID      string   `bson:"id"`
-	ConnID  string   `bson:"connId"`
-	Filters []Filter `bson:"filters"`
+	ID      string   `json:"-" bson:"id"`
+	ConnID  string   `json:"-" bson:"connId"`
+	Filters []Filter `json:"-" bson:"filters"`
 }
 
 type Filter struct {
-	Ids     []string            `bson:"ids"`
-	Authors []string            `bson:"authors"`
-	Kinds   []int               `bson:"kinds"`
-	Tags    map[string][]string `bson:"tags"`
-	Since   int                 `bson:"since"`
-	Until   int                 `bson:"until"`
-	Limit   int                 `bson:"limit"`
+	Ids     []string            `json:"ids" bson:"ids,omitempty"`
+	Authors []string            `json:"authors" bson:"authors,omitempty"`
+	Kinds   []int               `json:"kinds" bson:"kinds,omitempty"`
+	Tags    map[string][]string `json:"-" bson:"tags,omitempty"`
+	Since   int                 `json:"since" bson:"since,omitempty"`
+	Until   int                 `json:"until" bson:"until,omitempty"`
+	Limit   int                 `json:"limit" bson:"limit,omitempty"`
 }
 
-func (f *Filter) UnmarshalJSON(data []byte) error {
+func (r *Request) Unmarshal(body, connectionID string) error {
+	var raw []json.RawMessage
+	if err := json.Unmarshal([]byte(body), &raw); err != nil {
+		return fmt.Errorf("failed to unmarshal request body: %w", err)
+	}
+	if len(raw) < 3 {
+		return fmt.Errorf("expected a length of at least 3")
+	}
+	if err := json.Unmarshal(raw[1], &r.ID); err != nil {
+	}
+	r.ConnID = connectionID
+	r.Filters = make([]Filter, len(raw[2:]))
+	for i, rawFilter := range raw[2:] {
+		if err := json.Unmarshal(rawFilter, &r.Filters[i]); err != nil {
+			return fmt.Errorf("failed to unmarshal filter %d: %w", i, err)
+		}
+		if err := r.Filters[i].unmarshalTags(rawFilter); err != nil {
+			return fmt.Errorf("failed to unmarshal filter tags %d: %w", i, err)
+		}
+		if r.Filters[i].isZero() {
+			return fmt.Errorf("filter at %d is zero", i)
+		}
+	}
+	return nil
+}
+
+func (f *Filter) unmarshalTags(data []byte) error {
 	var jsonValue map[string]interface{}
 	err := json.Unmarshal(data, &jsonValue)
 	if err != nil {
 		return err
 	}
 	for k, v := range jsonValue {
-		switch k {
-		case "ids":
-			for _, v := range v.([]interface{}) {
-				f.Ids = append(f.Ids, v.(string))
-			}
-		case "authors":
-			for _, v := range v.([]interface{}) {
-				f.Authors = append(f.Authors, v.(string))
-			}
-		case "kinds":
-			for _, val := range v.([]interface{}) {
-				f.Kinds = append(f.Kinds, val.(int))
-			}
-		case "since":
-			f.Since = v.(int)
-		case "until":
-			f.Until = v.(int)
-		case "limit":
-			f.Limit = v.(int)
-		default:
-			if !strings.HasPrefix(k, "#") {
-				return fmt.Errorf("unknown filter type: %s", k)
-			}
-			if f.Tags == nil {
-				f.Tags = make(map[string][]string)
-			}
-			tagName := strings.TrimPrefix(k, "#")
-			for _, val := range v.([]interface{}) {
-				f.Tags[tagName] = append(f.Tags[tagName], val.(string))
-			}
+		if !strings.HasPrefix(k, "#") {
+			continue
+		}
+		if f.Tags == nil {
+			f.Tags = make(map[string][]string)
+		}
+		tagName := strings.TrimPrefix(k, "#")
+		for _, val := range v.([]interface{}) {
+			f.Tags[tagName] = append(f.Tags[tagName], val.(string))
 		}
 	}
 	return nil
+}
+
+func (f *Filter) isZero() bool {
+	return len(f.Ids) == 0 && len(f.Authors) == 0 && len(f.Kinds) == 0 && len(f.Tags) == 0 && f.Limit == 0
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -33,27 +32,10 @@ func mustNewHandler() *handler {
 
 func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (apigateway.Response, error) {
 	log.Printf("got request %+v", request.Body)
-	var raw []json.RawMessage
-	if err := json.Unmarshal([]byte(request.Body), &raw); err != nil {
+	var r requests.Request
+	if err := r.Unmarshal(request.Body, request.RequestContext.ConnectionID); err != nil {
 		log.Printf("failed to unmarshal request body: %v", err)
 		return h.responder.WithStatus(http.StatusBadRequest), nil
-	}
-	if len(raw) < 3 {
-		log.Printf("expected a length of at least 3")
-		return h.responder.WithStatus(http.StatusBadRequest), nil
-	}
-	r := requests.Request{
-		ID:      string(raw[1]),
-		ConnID:  request.RequestContext.ConnectionID,
-		Filters: make([]requests.Filter, len(raw[2:])),
-	}
-	for _, rawFilter := range raw[2:] {
-		var f requests.Filter
-		if err := json.Unmarshal(rawFilter, &f); err != nil {
-			log.Printf("failed to unmarshal event: %v", err)
-			return h.responder.WithStatus(http.StatusBadRequest), nil
-		}
-		r.Filters = append(r.Filters, f)
 	}
 	if err := h.reqService.Add(ctx, r); err != nil {
 		log.Printf("failed to add request: %v", err)

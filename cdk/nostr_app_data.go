@@ -114,11 +114,11 @@ func lambdaFunction(stack awscdk.Stack, name, path string, cfg config.Config, en
 	lambda := awslambda.NewFunction(stack, jsii.String(name+"Func"), &awslambda.FunctionProps{
 		Code: awslambda.Code_FromAsset(jsii.String("../app"), &awss3assets.AssetOptions{
 			Bundling: &awscdk.BundlingOptions{
-				Image: awscdk.DockerImage_FromRegistry(jsii.String("golang:1.21.13")),
+				Image: awscdk.DockerImage_FromRegistry(jsii.String("golang:1.23.2")),
 				Command: &[]*string{
 					jsii.String("bash"),
 					jsii.String("-c"),
-					jsii.String("GOCACHE=/tmp go mod tidy -go=1.21 && GOCACHE=/tmp GOARCH=arm64 GOOS=linux go build -tags lambda.norpc -o /asset-output/bootstrap " + path),
+					jsii.String("GOCACHE=/tmp go mod tidy && GOCACHE=/tmp GOARCH=arm64 GOOS=linux go build -tags lambda.norpc -o /asset-output/bootstrap " + path),
 				},
 			},
 		}),

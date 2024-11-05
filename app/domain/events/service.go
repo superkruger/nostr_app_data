@@ -3,11 +3,14 @@ package events
 import (
 	"context"
 	"fmt"
+
+	"github.com/superkruger/nostr_app_data/app/domain"
 )
 
 type Service interface {
-	Add(ctx context.Context, event Event) error
+	Add(ctx context.Context, event domain.Event) error
 	Remove(ctx context.Context, id string) error
+	FindForRequest(ctx context.Context, req domain.Request) ([]domain.Event, error)
 }
 
 type service struct {
@@ -28,7 +31,7 @@ func WithRepo(repo Repository) func(svc *service) {
 	}
 }
 
-func (s *service) Add(ctx context.Context, event Event) error {
+func (s *service) Add(ctx context.Context, event domain.Event) error {
 	valid, err := event.CheckSignature()
 	if err != nil {
 		return err
@@ -36,9 +39,21 @@ func (s *service) Add(ctx context.Context, event Event) error {
 	if !valid {
 		return fmt.Errorf("invalid signature")
 	}
-	return s.repo.add(ctx, event.toDB())
+	return s.repo.add(ctx, event.ToDB())
 }
 
 func (s *service) Remove(ctx context.Context, id string) error {
 	return s.repo.remove(ctx, id)
+}
+
+func (s *service) FindForRequest(ctx context.Context, req domain.Request) ([]domain.Event, error) {
+	dbEvents, err := s.repo.findForRequest(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	res := make([]domain.Event, 0, len(dbEvents))
+	for _, dbEvent := range dbEvents {
+		res = append(res, dbEvent.ToJson())
+	}
+	return res, nil
 }

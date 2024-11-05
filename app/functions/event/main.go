@@ -2,48 +2,41 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/apigatewaymanagementapi"
-	"github.com/aws/jsii-runtime-go"
+	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/goccy/go-json"
 
-	conns "github.com/superkruger/nostr_app_data/app/domain/connections"
+	"github.com/superkruger/nostr_app_data/app/domain"
 	evts "github.com/superkruger/nostr_app_data/app/domain/events"
 	req "github.com/superkruger/nostr_app_data/app/domain/requests"
+	"github.com/superkruger/nostr_app_data/app/utils/aws/apigateway"
+	"github.com/superkruger/nostr_app_data/app/utils/aws/notifiers"
+	"github.com/superkruger/nostr_app_data/app/utils/aws/notifiers/messages"
 	"github.com/superkruger/nostr_app_data/app/utils/env"
 	"github.com/superkruger/nostr_app_data/app/utils/skmongo"
-
-	"github.com/superkruger/nostr_app_data/app/utils/aws/apigateway"
 )
 
 type handler struct {
-	responder           apigateway.ProxyResponder
-	managementApiClient *apigatewaymanagementapi.ApiGatewayManagementApi
-	connService         conns.Service
-	evtService          evts.Service
-	reqService          req.Service
-	shutdown            func()
+	responder  apigateway.ProxyResponder
+	evtService evts.Service
+	reqService req.Service
+	notifier   notifiers.Notifier
+	shutdown   func()
 }
 
 func mustNewHandler() *handler {
-	log.Println("WS_API_ENDPOINT", env.MustGetString("WS_API_ENDPOINT"))
-	log.Println("AWS_REGION", env.MustGetString("AWS_REGION"))
 	db, closeDb := skmongo.MustFromSecretWithClose(env.MustGetString("DB_SECRET"))
 	sess := session.Must(session.NewSession())
 	return &handler{
-		managementApiClient: apigatewaymanagementapi.New(
-			sess,
-			aws.NewConfig().
-				WithRegion(env.MustGetString("AWS_REGION")).
-				WithEndpoint(env.MustGetString("WS_API_ENDPOINT"))),
-		connService: conns.NewService(conns.WithRepo(conns.NewRepository(db))),
-		evtService:  evts.NewService(evts.WithRepo(evts.NewRepository(db))),
+		evtService: evts.NewService(evts.WithRepo(evts.NewRepository(db))),
+		reqService: req.NewService(req.WithRepo(req.NewRepository(db))),
+		notifier:   notifiers.NewSNSNotifier(sns.New(sess), env.MustGetString("EVENT_FORWARD_TOPIC")),
 		shutdown: func() {
 			closeDb()
 		},
@@ -52,63 +45,46 @@ func mustNewHandler() *handler {
 
 func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (apigateway.Response, error) {
 	log.Printf("got event %+v", request.Body)
-
 	var raw []json.RawMessage
 	if err := json.Unmarshal([]byte(request.Body), &raw); err != nil {
 		log.Printf("failed to unmarshal request body: %v", err)
-		return h.responder.WithStatus(http.StatusBadRequest), nil
+		return h.responder.WithStatus(http.StatusBadRequest).WithJSONBody(eventResult(false, "", "error: could not unmarshal request body")), nil
 	}
 	if len(raw) != 2 {
 		log.Printf("expected a length of 2")
-		return h.responder.WithStatus(http.StatusBadRequest), nil
+		return h.responder.WithStatus(http.StatusBadRequest).WithJSONBody(eventResult(false, "", "error: wrong event format")), nil
 	}
-	var e evts.Event
+	var e domain.Event
 	if err := json.Unmarshal(raw[1], &e); err != nil {
 		log.Printf("failed to unmarshal event: %v", err)
-		return h.responder.WithStatus(http.StatusBadRequest), nil
+		return h.responder.WithStatus(http.StatusBadRequest).WithJSONBody(eventResult(false, e.ID, "error: could not unmarshal event")), nil
 	}
 	if err := h.evtService.Add(ctx, e); err != nil {
 		log.Printf("failed to add event: %v", err)
-		return h.responder.WithStatus(http.StatusInternalServerError), nil
+		return h.responder.WithStatus(http.StatusInternalServerError).WithJSONBody(eventResult(false, e.ID, "error: failed to store event")), nil
 	}
-	// TODO do in separate lambda
 	requests, err := h.reqService.Find(ctx, e)
 	if err != nil {
 		log.Printf("failed to find requests: %v", err)
-		return h.responder.WithStatus(http.StatusInternalServerError), nil
+		return h.responder.WithStatus(http.StatusInternalServerError).WithJSONBody(eventResult(true, e.ID, "error: failed to find matching requests")), nil
 	}
-	for _, req := range requests {
-		log.Printf("sending event %s to %s", request.Body, req.ConnID)
-		_, err := h.managementApiClient.PostToConnection(&apigatewaymanagementapi.PostToConnectionInput{
-			ConnectionId: jsii.String(req.ConnID),
-			Data:         []byte(request.Body),
-		})
-		if err != nil {
-			log.Printf("error posting to connection: %v", err)
-			_ = h.connService.Remove(ctx, req.ConnID)
-		}
+	subscribers := make([]domain.Subscriber, 0, len(requests))
+	for _, r := range requests {
+		subscribers = append(subscribers, r.Subscriber)
 	}
-	//log.Printf("sending events to %s", h.managementApiClient.Endpoint)
-	//conns, err := h.connService.All(ctx)
-	//if err != nil {
-	//	log.Printf("error getting connections: %v", err)
-	//	return h.responder.WithStatus(http.StatusInternalServerError), nil
-	//}
-	//for _, conn := range conns {
-	//	//if request.RequestContext.ConnectionID == conn.ID {
-	//	//	continue
-	//	//}
-	//	log.Printf("sending event %s to %s", request.Body, conn.ID)
-	//	_, err := h.managementApiClient.PostToConnection(&apigatewaymanagementapi.PostToConnectionInput{
-	//		ConnectionId: jsii.String(conn.ID),
-	//		Data:         []byte(request.Body),
-	//	})
-	//	if err != nil {
-	//		log.Printf("error posting to connection: %v", err)
-	//		_ = h.connService.Remove(ctx, conn.ID)
-	//	}
-	//}
-	return h.responder.WithStatus(http.StatusOK), nil
+	forwardEvent := domain.ForwardEvent{
+		Subscribers: subscribers,
+		Event:       request.Body,
+	}
+	if err := h.notifier.Send(ctx, messages.NewForJSON(forwardEvent).WithFifoID(e.PubKey, e.ID)); err != nil {
+		log.Printf("failed to send forward event: %v", err)
+		return h.responder.WithStatus(http.StatusInternalServerError).WithJSONBody(eventResult(true, e.ID, "error: failed to forward event")), nil
+	}
+	return h.responder.WithStatus(http.StatusOK).WithJSONBody(eventResult(true, e.ID, "")), nil
+}
+
+func eventResult(ok bool, id, reason string) string {
+	return fmt.Sprintf("[\"OK\",\"%s\",%v,\"%s\"]", id, ok, reason)
 }
 
 func main() {

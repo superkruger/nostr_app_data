@@ -1,4 +1,4 @@
-package events
+package domain
 
 import (
 	"crypto/sha256"
@@ -10,6 +10,16 @@ import (
 
 	"github.com/superkruger/nostr_app_data/app/utils"
 )
+
+const (
+	EventTypeEOSE  = "EOSE"
+	EventTypeEvent = "EVENT"
+)
+
+type ForwardEvent struct {
+	Subscribers []Subscriber `json:"subscribers"`
+	Event       string       `json:"event"`
+}
 
 type Event struct {
 	ID        string `json:"id" bson:"id"`
@@ -114,7 +124,7 @@ func (evt *Event) Sign(secretKey string, signOpts ...schnorr.SignOption) error {
 	return nil
 }
 
-func (evt Event) toDB() DBEvent {
+func (evt Event) ToDB() DBEvent {
 	return DBEvent{
 		ID:        evt.ID,
 		PubKey:    evt.PubKey,
@@ -126,7 +136,7 @@ func (evt Event) toDB() DBEvent {
 	}
 }
 
-func (evt DBEvent) toJson() Event {
+func (evt DBEvent) ToJson() Event {
 	return Event{
 		ID:        evt.ID,
 		PubKey:    evt.PubKey,

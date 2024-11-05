@@ -5,20 +5,20 @@ import (
 	"fmt"
 
 	"github.com/aws/jsii-runtime-go"
-	"github.com/superkruger/nostr_app_data/app/domain/events"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/superkruger/nostr_app_data/app/domain"
 	"github.com/superkruger/nostr_app_data/app/utils/skmongo"
 )
 
 const collectionName = "requests"
 
 type Repository interface {
-	add(ctx context.Context, request Request) error
+	add(ctx context.Context, request domain.Request) error
 	remove(ctx context.Context, subID string) error
-	findForEvent(ctx context.Context, event events.Event) ([]Request, error)
+	findForEvent(ctx context.Context, event domain.Event) ([]domain.Request, error)
 }
 
 type repository struct {
@@ -37,7 +37,7 @@ func NewRepository(db skmongo.Mongo) Repository {
 	}
 }
 
-func (r *repository) add(ctx context.Context, request Request) error {
+func (r *repository) add(ctx context.Context, request domain.Request) error {
 	_, err := r.c.UpdateOne(ctx, bson.M{"id": request.ID}, bson.M{"$set": request}, &options.UpdateOptions{Upsert: jsii.Bool(true)})
 	return err
 }
@@ -47,8 +47,8 @@ func (r *repository) remove(ctx context.Context, id string) error {
 	return err
 }
 
-func (r *repository) findForEvent(ctx context.Context, event events.Event) ([]Request, error) {
-	var results []Request
+func (r *repository) findForEvent(ctx context.Context, event domain.Event) ([]domain.Request, error) {
+	var results []domain.Request
 	filter := bson.M{
 		"filters": bson.M{
 			"$elemMatch": bson.M{
@@ -82,11 +82,12 @@ func (r *repository) findForEvent(ctx context.Context, event events.Event) ([]Re
 	if err != nil {
 		return nil, err
 	}
+	defer func() { _ = cursor.Close(ctx) }()
 	err = cursor.All(ctx, &results)
 	return results, err
 }
 
-func tagsFilter(event events.Event) []bson.M {
+func tagsFilter(event domain.Event) []bson.M {
 	filter := []bson.M{
 		{"tags": bson.M{"$exists": false}},
 	}

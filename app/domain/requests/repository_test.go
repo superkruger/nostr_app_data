@@ -6,9 +6,10 @@ import (
 	"testing"
 
 	"github.com/pascaldekloe/goe/verify"
-	"github.com/superkruger/nostr_app_data/app/domain/events"
-	"github.com/superkruger/nostr_app_data/app/utils/skmongo"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/superkruger/nostr_app_data/app/domain"
+	"github.com/superkruger/nostr_app_data/app/utils/skmongo"
 )
 
 const mongoSecret = "test/nostr/mongo/rw"
@@ -22,17 +23,17 @@ func TestFindForEvent(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		given   []Request
-		event   events.Event
-		want    []Request
+		given   []domain.Request
+		event   domain.Event
+		want    []domain.Request
 		wantErr bool
 	}{
 		"simple match": {
-			given: []Request{
+			given: []domain.Request{
 				{
 					ID:     "r1",
 					ConnID: "c1",
-					Filters: []Filter{
+					Filters: []domain.Filter{
 						{
 							Ids:     []string{"id1"},
 							Authors: []string{"auth1"},
@@ -44,21 +45,21 @@ func TestFindForEvent(t *testing.T) {
 					},
 				},
 			},
-			event: events.Event{
+			event: domain.Event{
 				ID:        "id1",
 				PubKey:    "auth1",
 				Kind:      1,
-				Tags:      events.Tags{{"t1", "t1val1"}}, //map[string]events.DBTag{"t1": {Values: []string{"t1val1"}}},
+				Tags:      domain.Tags{{"t1", "t1val1"}}, //map[string]events.DBTag{"t1": {Values: []string{"t1val1"}}},
 				CreatedAt: 20,
 			},
-			want: []Request{{ID: "r1", ConnID: "c1"}},
+			want: []domain.Request{{ID: "r1", ConnID: "c1"}},
 		},
 		"no match over two filters": {
-			given: []Request{
+			given: []domain.Request{
 				{
 					ID:     "r1",
 					ConnID: "c1",
-					Filters: []Filter{
+					Filters: []domain.Filter{
 						{
 							Ids:     []string{"id1"},
 							Authors: []string{"auth1"},
@@ -78,21 +79,21 @@ func TestFindForEvent(t *testing.T) {
 					},
 				},
 			},
-			event: events.Event{
+			event: domain.Event{
 				ID:        "id2",
 				PubKey:    "auth1",
 				Kind:      2,
-				Tags:      events.Tags{{"t1", "t1val1"}}, //mmap[string]events.DBTag{"t1": {Values: []string{"t1val1"}}},
+				Tags:      domain.Tags{{"t1", "t1val1"}}, //mmap[string]events.DBTag{"t1": {Values: []string{"t1val1"}}},
 				CreatedAt: 150,
 			},
-			want: []Request{},
+			want: []domain.Request{},
 		},
 		"match one request": {
-			given: []Request{
+			given: []domain.Request{
 				{
 					ID:     "r1",
 					ConnID: "c1",
-					Filters: []Filter{
+					Filters: []domain.Filter{
 						{
 							Ids:     []string{"id1"},
 							Authors: []string{"auth1"},
@@ -114,7 +115,7 @@ func TestFindForEvent(t *testing.T) {
 				{
 					ID:     "r2",
 					ConnID: "c2",
-					Filters: []Filter{
+					Filters: []domain.Filter{
 						{
 							Ids:     []string{"id3"},
 							Authors: []string{"auth3"},
@@ -134,21 +135,21 @@ func TestFindForEvent(t *testing.T) {
 					},
 				},
 			},
-			event: events.Event{
+			event: domain.Event{
 				ID:        "id4",
 				PubKey:    "auth4",
 				Kind:      4,
-				Tags:      events.Tags{{"t4", "t4val1"}}, //m map[string]events.DBTag{"t4": {Values: []string{"t4val1"}}},
+				Tags:      domain.Tags{{"t4", "t4val1"}}, //m map[string]events.DBTag{"t4": {Values: []string{"t4val1"}}},
 				CreatedAt: 50,
 			},
-			want: []Request{{ID: "r2", ConnID: "c2"}},
+			want: []domain.Request{{ID: "r2", ConnID: "c2"}},
 		},
 		"multiple tags": {
-			given: []Request{
+			given: []domain.Request{
 				{
 					ID:     "r1",
 					ConnID: "c1",
-					Filters: []Filter{
+					Filters: []domain.Filter{
 						{
 							Tags: map[string][]string{"t": {"tval1"}},
 						},
@@ -160,7 +161,7 @@ func TestFindForEvent(t *testing.T) {
 				{
 					ID:     "r2",
 					ConnID: "c2",
-					Filters: []Filter{
+					Filters: []domain.Filter{
 						{
 							Tags: map[string][]string{"t": {"tval3"}},
 						},
@@ -170,21 +171,21 @@ func TestFindForEvent(t *testing.T) {
 					},
 				},
 			},
-			event: events.Event{
+			event: domain.Event{
 				ID:        "id4",
 				PubKey:    "auth4",
 				Kind:      4,
-				Tags:      []events.Tag{{"t", "tval1"}, {"t", "tval4"}}, //map[string]events.DBTag{"t": {Values: []string{"tval1", "tval4"}}},
+				Tags:      []domain.Tag{{"t", "tval1"}, {"t", "tval4"}}, //map[string]events.DBTag{"t": {Values: []string{"tval1", "tval4"}}},
 				CreatedAt: 50,
 			},
-			want: []Request{{ID: "r1", ConnID: "c1"}, {ID: "r2", ConnID: "c2"}},
+			want: []domain.Request{{ID: "r1", ConnID: "c1"}, {ID: "r2", ConnID: "c2"}},
 		},
 		"single tag": {
-			given: []Request{
+			given: []domain.Request{
 				{
 					ID:     "r1",
 					ConnID: "c1",
-					Filters: []Filter{
+					Filters: []domain.Filter{
 						{
 							Tags: map[string][]string{"t": {"tval1"}},
 						},
@@ -196,7 +197,7 @@ func TestFindForEvent(t *testing.T) {
 				{
 					ID:     "r2",
 					ConnID: "c2",
-					Filters: []Filter{
+					Filters: []domain.Filter{
 						{
 							Tags: map[string][]string{"t": {"tval3"}},
 						},
@@ -206,21 +207,21 @@ func TestFindForEvent(t *testing.T) {
 					},
 				},
 			},
-			event: events.Event{
+			event: domain.Event{
 				ID:        "id4",
 				PubKey:    "auth4",
 				Kind:      4,
-				Tags:      []events.Tag{{"t", "tval4"}}, //map[string]events.DBTag{"t": {Values: []string{"tval5"}}},
+				Tags:      []domain.Tag{{"t", "tval4"}}, //map[string]events.DBTag{"t": {Values: []string{"tval5"}}},
 				CreatedAt: 50,
 			},
-			want: []Request{{ID: "r2", ConnID: "c2"}},
+			want: []domain.Request{{ID: "r2", ConnID: "c2"}},
 		},
 		"open filters": {
-			given: []Request{
+			given: []domain.Request{
 				{
 					ID:     "r1",
 					ConnID: "c1",
-					Filters: []Filter{
+					Filters: []domain.Filter{
 						{
 							Since: 10,
 						},
@@ -232,7 +233,7 @@ func TestFindForEvent(t *testing.T) {
 				{
 					ID:     "r2",
 					ConnID: "c2",
-					Filters: []Filter{
+					Filters: []domain.Filter{
 						{
 							Since: 30,
 						},
@@ -242,14 +243,14 @@ func TestFindForEvent(t *testing.T) {
 					},
 				},
 			},
-			event: events.Event{
+			event: domain.Event{
 				ID:        "id4",
 				PubKey:    "auth4",
 				Kind:      4,
-				Tags:      events.Tags{{"t4", "t4val1"}}, //mmap[string]events.DBTag{"t4": {Values: []string{"t4val1"}}},
+				Tags:      domain.Tags{{"t4", "t4val1"}}, //mmap[string]events.DBTag{"t4": {Values: []string{"t4val1"}}},
 				CreatedAt: 10,
 			},
-			want: []Request{{ID: "r1", ConnID: "c1"}},
+			want: []domain.Request{{ID: "r1", ConnID: "c1"}},
 		},
 	}
 	for name, testCase := range tests {

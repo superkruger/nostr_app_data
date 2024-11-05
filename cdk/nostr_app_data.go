@@ -9,8 +9,11 @@ import (
 	codebuild "github.com/aws/aws-cdk-go/awscdk/v2/awscodebuild"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awslambdaeventsources"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslogs"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3assets"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awssqs"
 	"github.com/aws/aws-cdk-go/awscdk/v2/pipelines"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -37,6 +40,9 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	eventHandler := lambdaFunction(stack, name("Event"), "./functions/event", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
+	forwardHandler := lambdaFunction(stack, name("Forward"), "./functions/forward", cfg, map[string]*string{
+		"DB_SECRET": jsii.String(cfg.DBSecret),
+	})
 
 	webSocketApi := awsapigatewayv2.NewWebSocketApi(stack, jsii.String(name("WSSAPI")), &awsapigatewayv2.WebSocketApiProps{
 		ConnectRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
@@ -61,12 +67,22 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 		StageName:    jsii.String(cfg.Name),
 		WebSocketApi: webSocketApi,
 	})
-
-	eventHandler.AddEnvironment(
-		jsii.String("WS_API_ENDPOINT"),
-		jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *props.Env.Region, *wssStage.StageName())),
-		nil)
+	wsApiEndpoint := jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *props.Env.Region, *wssStage.StageName()))
+	requestHandler.AddEnvironment(jsii.String("WS_API_ENDPOINT"), wsApiEndpoint, nil)
+	forwardHandler.AddEnvironment(jsii.String("WS_API_ENDPOINT"), wsApiEndpoint, nil)
 	//fmt.Printf("WS ARN %s\n", *webSocketApi.ArnForExecuteApi(jsii.String("POST"), jsii.String("/*"), jsii.String("test")))
+
+	eventForwardTopic := awssns.NewTopic(stack, jsii.String(name("EventForwardTopic")), &awssns.TopicProps{
+		Fifo: jsii.Bool(true),
+	})
+	eventForwardQueue := awssqs.NewQueue(stack, jsii.String(name("EventForwardQueue")), &awssqs.QueueProps{
+		Fifo: jsii.Bool(true),
+	})
+
+	forwardHandler.AddEventSource(awslambdaeventsources.NewSqsEventSource(eventForwardQueue, nil))
+
+	eventHandler.AddEnvironment(jsii.String("EVENT_FORWARD_TOPIC"), eventForwardTopic.TopicArn(), nil)
+	requestHandler.AddEnvironment(jsii.String("EVENT_FORWARD_TOPIC"), eventForwardTopic.TopicArn(), nil)
 
 	//postHandler := lambdaFunction(stack, "Post", "../app/functions/post",
 	//	map[string]*string{"WS_API_ENDPOINT": jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *env().Region, *wsStage.StageName()))})

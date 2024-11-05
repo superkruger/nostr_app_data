@@ -1,4 +1,4 @@
-package events
+package domain
 
 import "github.com/superkruger/nostr_app_data/app/utils"
 

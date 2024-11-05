@@ -1,4 +1,4 @@
-package requests
+package domain
 
 import (
 	"encoding/json"
@@ -6,9 +6,13 @@ import (
 	"strings"
 )
 
+type Subscriber struct {
+	ID     string `json:"id" bson:"id"`
+	ConnID string `json:"connId" bson:"connId"`
+}
+
 type Request struct {
-	ID      string   `json:"-" bson:"id"`
-	ConnID  string   `json:"-" bson:"connId"`
+	Subscriber
 	Filters []Filter `json:"-" bson:"filters"`
 }
 

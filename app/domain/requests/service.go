@@ -2,11 +2,14 @@ package requests
 
 import (
 	"context"
+
+	"github.com/superkruger/nostr_app_data/app/domain/events"
 )
 
 type Service interface {
 	Add(ctx context.Context, request Request) error
 	Remove(ctx context.Context, id string) error
+	Find(ctx context.Context, event events.Event) ([]Request, error)
 }
 
 type service struct {
@@ -33,4 +36,8 @@ func (s *service) Add(ctx context.Context, request Request) error {
 
 func (s *service) Remove(ctx context.Context, id string) error {
 	return s.repo.remove(ctx, id)
+}
+
+func (s *service) Find(ctx context.Context, event events.Event) ([]Request, error) {
+	return s.repo.findForEvent(ctx, event)
 }

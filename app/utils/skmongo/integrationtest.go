@@ -41,7 +41,7 @@ const (
 	// NoRollbackForTest is the key to see the test_collection with data.
 	NoRollbackForTest = "TEST_NO_ROLLBACK"
 
-	defaultMigrationPath     = "../ops/migrations"
+	defaultMigrationPath     = "../../migrations"
 	maxMigrationPathSearches = 7
 )
 

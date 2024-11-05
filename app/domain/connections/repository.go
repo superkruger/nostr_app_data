@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/aws/aws-xray-sdk-go/xray"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -41,27 +40,21 @@ func NewRepository(db skmongo.Mongo) Repository {
 }
 
 func (r *repository) add(ctx context.Context, con connection) error {
-	return xray.Capture(ctx, "DB - add connection", func(ctx1 context.Context) error {
-		_, err := r.c.InsertOne(ctx1, con)
-		return err
-	})
+	_, err := r.c.InsertOne(ctx, con)
+	return err
 }
 
 func (r *repository) remove(ctx context.Context, id string) error {
-	return xray.Capture(ctx, "DB - remove connection", func(ctx1 context.Context) error {
-		_, err := r.c.DeleteOne(ctx1, bson.M{"id": id})
-		return err
-	})
+	_, err := r.c.DeleteOne(ctx, bson.M{"id": id})
+	return err
 }
 
 func (r *repository) all(ctx context.Context) ([]connection, error) {
 	var res []connection
-	err := xray.Capture(ctx, "DB - all connections", func(ctx1 context.Context) error {
-		cursor, err := r.c.Find(ctx1, bson.M{})
-		if err != nil {
-			return err
-		}
-		return cursor.All(ctx1, &res)
-	})
+	cursor, err := r.c.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(ctx, &res)
 	return res, err
 }

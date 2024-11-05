@@ -10,10 +10,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/apigatewaymanagementapi"
+	"github.com/aws/jsii-runtime-go"
 	"github.com/goccy/go-json"
 
 	conns "github.com/superkruger/nostr_app_data/app/domain/connections"
 	evts "github.com/superkruger/nostr_app_data/app/domain/events"
+	req "github.com/superkruger/nostr_app_data/app/domain/requests"
 	"github.com/superkruger/nostr_app_data/app/utils/env"
 	"github.com/superkruger/nostr_app_data/app/utils/skmongo"
 
@@ -25,6 +27,7 @@ type handler struct {
 	managementApiClient *apigatewaymanagementapi.ApiGatewayManagementApi
 	connService         conns.Service
 	evtService          evts.Service
+	reqService          req.Service
 	shutdown            func()
 }
 
@@ -64,12 +67,27 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 		log.Printf("failed to unmarshal event: %v", err)
 		return h.responder.WithStatus(http.StatusBadRequest), nil
 	}
-
 	if err := h.evtService.Add(ctx, e); err != nil {
 		log.Printf("failed to add event: %v", err)
 		return h.responder.WithStatus(http.StatusInternalServerError), nil
 	}
-
+	// TODO do in separate lambda
+	requests, err := h.reqService.Find(ctx, e)
+	if err != nil {
+		log.Printf("failed to find requests: %v", err)
+		return h.responder.WithStatus(http.StatusInternalServerError), nil
+	}
+	for _, req := range requests {
+		log.Printf("sending event %s to %s", request.Body, req.ConnID)
+		_, err := h.managementApiClient.PostToConnection(&apigatewaymanagementapi.PostToConnectionInput{
+			ConnectionId: jsii.String(req.ConnID),
+			Data:         []byte(request.Body),
+		})
+		if err != nil {
+			log.Printf("error posting to connection: %v", err)
+			_ = h.connService.Remove(ctx, req.ConnID)
+		}
+	}
 	//log.Printf("sending events to %s", h.managementApiClient.Endpoint)
 	//conns, err := h.connService.All(ctx)
 	//if err != nil {

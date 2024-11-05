@@ -66,7 +66,7 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 		jsii.String("WS_API_ENDPOINT"),
 		jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *props.Env.Region, *wssStage.StageName())),
 		nil)
-	fmt.Printf("WS ARN %s\n", *webSocketApi.ArnForExecuteApi(jsii.String("POST"), jsii.String("/*"), jsii.String("test")))
+	//fmt.Printf("WS ARN %s\n", *webSocketApi.ArnForExecuteApi(jsii.String("POST"), jsii.String("/*"), jsii.String("test")))
 
 	//postHandler := lambdaFunction(stack, "Post", "../app/functions/post",
 	//	map[string]*string{"WS_API_ENDPOINT": jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *env().Region, *wsStage.StageName()))})
@@ -207,9 +207,14 @@ func main() {
 	app := awscdk.NewApp(nil)
 	envName := app.Node().GetContext(jsii.String("environment"))
 	cfg := config.MustNewConfig(envName.(string))
-	NewCdkPipeline(app, jsii.String(fmt.Sprintf("%s-%s", cfg.Name, "PipelineStack")), cfg, &awscdk.StackProps{
+
+	NewCdkAppStack(app, jsii.String(fmt.Sprintf("%s-%s", cfg.Name, "NostrAppData")), cfg, &awscdk.StackProps{
 		Env: env(cfg),
 	})
+
+	//NewCdkPipeline(app, jsii.String(fmt.Sprintf("%s-%s", cfg.Name, "PipelineStack")), cfg, &awscdk.StackProps{
+	//	Env: env(cfg),
+	//})
 	app.Synth(nil)
 }
 

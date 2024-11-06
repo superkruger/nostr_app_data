@@ -18,6 +18,8 @@ const collectionName = "events"
 type Repository interface {
 	add(ctx context.Context, event domain.DBEvent) error
 	remove(ctx context.Context, id string) error
+	removeReplaceable(ctx context.Context, pubKey string, kind int) error
+	removeAddressable(ctx context.Context, pubKey string, kind int, dTag domain.DBTag) error
 	findForRequest(ctx context.Context, req domain.Request) ([]domain.DBEvent, error)
 }
 
@@ -44,6 +46,16 @@ func (r *repository) add(ctx context.Context, event domain.DBEvent) error {
 
 func (r *repository) remove(ctx context.Context, id string) error {
 	_, err := r.c.DeleteOne(ctx, bson.M{"id": id})
+	return err
+}
+
+func (r *repository) removeReplaceable(ctx context.Context, pubKey string, kind int) error {
+	_, err := r.c.DeleteMany(ctx, bson.M{"pubkey": pubKey, "kind": kind})
+	return err
+}
+
+func (r *repository) removeAddressable(ctx context.Context, pubKey string, kind int, dTag domain.DBTag) error {
+	_, err := r.c.DeleteMany(ctx, bson.M{"pubkey": pubKey, "kind": kind, "tags.d.values": bson.M{"$in": dTag.Values}})
 	return err
 }
 

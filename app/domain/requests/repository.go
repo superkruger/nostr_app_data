@@ -88,6 +88,7 @@ func (r *repository) findForEvent(ctx context.Context, event domain.Event) ([]do
 }
 
 func tagsFilter(event domain.Event) []bson.M {
+	// TODO: add indices
 	filter := []bson.M{
 		{"tags": bson.M{"$exists": false}},
 	}

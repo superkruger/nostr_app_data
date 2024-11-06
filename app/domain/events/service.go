@@ -39,7 +39,23 @@ func (s *service) Add(ctx context.Context, event domain.Event) error {
 	if !valid {
 		return fmt.Errorf("invalid signature")
 	}
-	return s.repo.add(ctx, event.ToDB())
+	dbEvent := event.ToDB()
+	if event.IsRegular() {
+		return s.repo.add(ctx, dbEvent)
+	}
+	if event.IsReplaceable() {
+		if err := s.repo.removeReplaceable(ctx, event.PubKey, event.Kind); err != nil {
+			return err
+		}
+		return s.repo.add(ctx, dbEvent)
+	}
+	if event.IsAddressable() {
+		if err := s.repo.removeAddressable(ctx, event.PubKey, event.Kind, dbEvent.Tags["d"]); err != nil {
+			return err
+		}
+		return s.repo.add(ctx, dbEvent)
+	}
+	return nil
 }
 
 func (s *service) Remove(ctx context.Context, id string) error {

@@ -70,7 +70,7 @@ func (evt *Event) Serialize() []byte {
 // CheckSignature checks if the signature is valid for the id
 // (which is a hash of the serialized event content).
 // returns an error if the signature itself is invalid.
-func (evt Event) CheckSignature() (bool, error) {
+func (evt *Event) CheckSignature() (bool, error) {
 	// read and check pubkey
 	pk, err := hex.DecodeString(evt.PubKey)
 	if err != nil {
@@ -124,7 +124,7 @@ func (evt *Event) Sign(secretKey string, signOpts ...schnorr.SignOption) error {
 	return nil
 }
 
-func (evt Event) ToDB() DBEvent {
+func (evt *Event) ToDB() DBEvent {
 	return DBEvent{
 		ID:        evt.ID,
 		PubKey:    evt.PubKey,
@@ -136,7 +136,19 @@ func (evt Event) ToDB() DBEvent {
 	}
 }
 
-func (evt DBEvent) ToJson() Event {
+func (evt *Event) IsRegular() bool {
+	return (evt.Kind >= 1000 && evt.Kind < 10000) || (evt.Kind >= 4 && evt.Kind < 45) || evt.Kind == 1 || evt.Kind == 2
+}
+
+func (evt *Event) IsReplaceable() bool {
+	return (evt.Kind >= 10000 && evt.Kind < 20000) || evt.Kind == 0 || evt.Kind == 3
+}
+
+func (evt *Event) IsAddressable() bool {
+	return evt.Kind >= 30000 && evt.Kind < 40000
+}
+
+func (evt *DBEvent) ToJson() Event {
 	return Event{
 		ID:        evt.ID,
 		PubKey:    evt.PubKey,

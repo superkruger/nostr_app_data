@@ -5,6 +5,18 @@
   },
   {
     "dropIndexes": "events",
+    "index": "pubkey"
+  },
+  {
+    "dropIndexes": "events",
+    "index": "kind"
+  },
+  {
+    "dropIndexes": "events",
+    "index": "tags_d"
+  },
+  {
+    "dropIndexes": "events",
     "index": "tags_e"
   }
 ]

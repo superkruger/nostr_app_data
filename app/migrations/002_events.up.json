@@ -11,10 +11,45 @@
     },
     {
       "key":{
+        "pubkey" : 1
+      },
+      "name": "pubkey",
+      "background": true
+    },
+    {
+      "key":{
+        "kind" : 1
+      },
+      "name": "kind",
+      "background": true
+    },
+    {
+      "key":{
         "tags.e.values" : 1
       },
       "name": "tags_e",
       "background": true
-    }
+    },
+    {
+      "key":{
+        "tags.p.values" : 1
+      },
+      "name": "tags_p",
+      "background": true
+    },
+    {
+      "key":{
+        "tags.a.values" : 1
+      },
+      "name": "tags_a",
+      "background": true
+    },
+    {
+      "key":{
+        "tags.d.values" : 1
+      },
+      "name": "tags_d",
+      "background": true
+    },
   ]
 }]

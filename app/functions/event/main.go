@@ -76,9 +76,12 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 		Subscribers: subscribers,
 		Event:       request.Body,
 	}
-	if err := h.notifier.Send(ctx, messages.NewForJSON(forwardEvent).WithFifoID(e.PubKey, e.ID)); err != nil {
-		log.Printf("failed to send forward event: %v", err)
-		return h.responder.WithStatus(http.StatusInternalServerError).WithJSONBody(eventResult(true, e.ID, "error: failed to forward event")), nil
+	log.Printf("forwarding event to %d subscribers", len(subscribers))
+	if len(subscribers) > 0 {
+		if err := h.notifier.Send(ctx, messages.NewForJSON(forwardEvent).WithFifoID(e.PubKey, e.ID)); err != nil {
+			log.Printf("failed to send forward event: %v", err)
+			return h.responder.WithStatus(http.StatusInternalServerError).WithJSONBody(eventResult(true, e.ID, "error: failed to forward event")), nil
+		}
 	}
 	return h.responder.WithStatus(http.StatusOK).WithJSONBody(eventResult(true, e.ID, "")), nil
 }

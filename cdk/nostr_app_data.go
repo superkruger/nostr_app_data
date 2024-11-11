@@ -156,7 +156,7 @@ func lambdaFunction(stack awscdk.Stack, name, path string, cfg config.Config, en
 		FunctionName: jsii.String(name + "Func"),
 		Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
 		MemorySize:   jsii.Number(128),
-		Timeout:      awscdk.Duration_Seconds(jsii.Number(3)),
+		Timeout:      awscdk.Duration_Seconds(jsii.Number(15)),
 		Handler:      jsii.String("bootstrap"),
 		Architecture: awslambda.Architecture_ARM_64(),
 		Environment:  &env,

@@ -55,6 +55,7 @@ func (r *repository) all(ctx context.Context) ([]connection, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer func() { _ = cursor.Close(ctx) }()
 	err = cursor.All(ctx, &res)
 	return res, err
 }

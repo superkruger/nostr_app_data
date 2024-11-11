@@ -51,6 +51,12 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 		log.Printf("failed to unmarshal request body: %v", err)
 		return h.responder.WithStatus(http.StatusBadRequest), nil
 	}
+	unIndexedTags := r.UnIndexedTags()
+	if len(unIndexedTags) > 0 {
+		if err := h.notifierIssues.Send(ctx, messages.NewForJSON(unIndexedTags)); err != nil {
+			log.Printf("failed to send issues event: %v", err)
+		}
+	}
 	if err := h.reqService.Add(ctx, r); err != nil {
 		log.Printf("failed to add request: %v", err)
 		return h.responder.WithStatus(http.StatusInternalServerError), nil
@@ -83,12 +89,6 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 		}
 		if err := h.notifier.Send(ctx, messages.NewForJSON(forwardEvent).WithFifoID(r.ID, domain.EventTypeEOSE)); err != nil {
 			log.Printf("failed to send forward event: %v", err)
-		}
-	}
-	unIndexedTags := r.UnIndexedTags()
-	if len(unIndexedTags) > 0 {
-		if err := h.notifierIssues.Send(ctx, messages.NewForJSON(unIndexedTags)); err != nil {
-			log.Printf("failed to send issues event: %v", err)
 		}
 	}
 	return h.responder.WithStatus(http.StatusOK), nil

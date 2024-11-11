@@ -74,8 +74,11 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 			return h.responder.WithStatus(http.StatusInternalServerError), nil
 		}
 		forwardEvent := domain.ForwardEvent{
-			Subscribers: []domain.Subscriber{r.Subscriber},
-			Event:       string(eventJson),
+			Subscribers: []domain.Subscriber{{
+				ID:     r.ID,
+				ConnID: r.ConnID,
+			}},
+			Event: string(eventJson),
 		}
 		if err := h.notifier.Send(ctx, messages.NewForJSON(forwardEvent).WithFifoID(r.ID, reqEvent.ID)); err != nil {
 			log.Printf("failed to send forward event: %v", err)
@@ -84,8 +87,11 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 	if len(reqEvents) > 0 {
 		log.Printf("forwarding EOSE event")
 		forwardEvent := domain.ForwardEvent{
-			Subscribers: []domain.Subscriber{r.Subscriber},
-			Event:       domain.EventTypeEOSE,
+			Subscribers: []domain.Subscriber{{
+				ID:     r.ID,
+				ConnID: r.ConnID,
+			}},
+			Event: domain.EventTypeEOSE,
 		}
 		if err := h.notifier.Send(ctx, messages.NewForJSON(forwardEvent).WithFifoID(r.ID, domain.EventTypeEOSE)); err != nil {
 			log.Printf("failed to send forward event: %v", err)

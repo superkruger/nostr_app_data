@@ -17,6 +17,11 @@ const (
 	EventTypeEvent = "EVENT"
 )
 
+type Subscriber struct {
+	ID     string `json:"id"`
+	ConnID string `json:"connId"`
+}
+
 type ForwardEvent struct {
 	Subscribers []Subscriber `json:"subscribers"`
 	Event       string       `json:"event"`

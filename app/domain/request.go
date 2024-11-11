@@ -9,13 +9,9 @@ import (
 
 var indexedTags = map[string]struct{}{"e": {}, "p": {}, "a": {}, "d": {}}
 
-type Subscriber struct {
-	ID     string `json:"id" bson:"id"`
-	ConnID string `json:"connId" bson:"connId"`
-}
-
 type Request struct {
-	Subscriber
+	ID       string    `json:"id" bson:"id"`
+	ConnID   string    `json:"connId" bson:"connId"`
 	Filters  []Filter  `json:"-" bson:"filters"`
 	ExpireAt time.Time `json:"-" bson:"expire_at,omitempty"`
 }

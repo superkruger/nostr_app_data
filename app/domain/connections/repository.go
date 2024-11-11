@@ -15,6 +15,7 @@ const collectionName = "connections"
 type connection struct {
 	ID        string    `json:"id" bson:"id"`
 	CreatedAt time.Time `json:"created_at" bson:"created_at"`
+	ExpiresAt time.Time `json:"-" bson:"expires_at,omitempty"`
 }
 
 type Repository interface {

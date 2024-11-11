@@ -47,10 +47,17 @@ func mustNewHandler() *handler {
 
 func (h *handler) handleEvent(ctx context.Context, event events.SQSEvent) error {
 	for _, record := range event.Records {
-		log.Printf("got record %+v", record.Body)
-		var forwardEvent domain.ForwardEvent
-		if err := json.Unmarshal([]byte(record.Body), &forwardEvent); err != nil {
+		//log.Printf("got record %+v", record)
+		var recordMessage struct {
+			Message string `json:"Message"`
+		}
+		if err := json.Unmarshal([]byte(record.Body), &recordMessage); err != nil {
 			log.Printf("failed to unmarshal record body: %v", err)
+			return err
+		}
+		var forwardEvent domain.ForwardEvent
+		if err := json.Unmarshal([]byte(recordMessage.Message), &forwardEvent); err != nil {
+			log.Printf("failed to unmarshal record message: %v", err)
 			return err
 		}
 		log.Printf("sending event %v to %d subscribers", forwardEvent.Event, len(forwardEvent.Subscribers))

@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const ttlSeconds = 3600 * 24 * time.Second
+
 type Service interface {
 	Add(ctx context.Context, id string, at time.Time) error
 	Remove(ctx context.Context, id string) error
@@ -33,6 +35,7 @@ func (s *service) Add(ctx context.Context, id string, at time.Time) error {
 	return s.repo.add(ctx, connection{
 		ID:        id,
 		CreatedAt: at,
+		ExpiresAt: at.Add(ttlSeconds),
 	})
 }
 

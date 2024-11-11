@@ -70,7 +70,10 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 	}
 	subscribers := make([]domain.Subscriber, 0, len(requests))
 	for _, r := range requests {
-		subscribers = append(subscribers, r.Subscriber)
+		subscribers = append(subscribers, domain.Subscriber{
+			ID:     r.ID,
+			ConnID: r.ConnID,
+		})
 	}
 	forwardEvent := domain.ForwardEvent{
 		Subscribers: subscribers,

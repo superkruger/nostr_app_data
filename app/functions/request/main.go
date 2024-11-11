@@ -82,8 +82,10 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 		log.Printf("failed to send forward event: %v", err)
 	}
 	unIndexedTags := r.UnIndexedTags()
-	if err := h.notifierIssues.Send(ctx, messages.NewForJSON(unIndexedTags)); err != nil {
-		log.Printf("failed to send issues event: %v", err)
+	if len(unIndexedTags) > 0 {
+		if err := h.notifierIssues.Send(ctx, messages.NewForJSON(unIndexedTags)); err != nil {
+			log.Printf("failed to send issues event: %v", err)
+		}
 	}
 	return h.responder.WithStatus(http.StatusOK), nil
 }

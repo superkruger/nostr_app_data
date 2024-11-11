@@ -19,3 +19,6 @@
 cdk.out
 
 .idea
+
+# build folder
+build

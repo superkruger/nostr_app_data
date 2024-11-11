@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambdaeventsources"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslogs"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awss3assets"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssqs"
 	"github.com/aws/aws-cdk-go/awscdk/v2/pipelines"
@@ -27,20 +26,20 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	}
 	stack := awscdk.NewStack(scope, id, props)
 
-	connectHandler := lambdaFunction(stack, name("Connect"), "./functions/connect", cfg, map[string]*string{
+	connectHandler := lambdaFunction(stack, name("Connect"), "functions/connect", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
-	disconnectHandler := lambdaFunction(stack, name("Disconnect"), "./functions/disconnect", cfg, map[string]*string{
+	disconnectHandler := lambdaFunction(stack, name("Disconnect"), "functions/disconnect", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
-	defaultHandler := lambdaFunction(stack, name("Default"), "./functions/default", cfg, nil)
-	requestHandler := lambdaFunction(stack, name("Request"), "./functions/request", cfg, map[string]*string{
+	defaultHandler := lambdaFunction(stack, name("Default"), "functions/default", cfg, nil)
+	requestHandler := lambdaFunction(stack, name("Request"), "functions/request", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
-	eventHandler := lambdaFunction(stack, name("Event"), "./functions/event", cfg, map[string]*string{
+	eventHandler := lambdaFunction(stack, name("Event"), "functions/event", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
-	forwardHandler := lambdaFunction(stack, name("Forward"), "./functions/forward", cfg, map[string]*string{
+	forwardHandler := lambdaFunction(stack, name("Forward"), "functions/forward", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
 
@@ -143,16 +142,7 @@ func lambdaFunction(stack awscdk.Stack, name, path string, cfg config.Config, en
 		RemovalPolicy: awscdk.RemovalPolicy_DESTROY,
 	})
 	lambda := awslambda.NewFunction(stack, jsii.String(name+"Func"), &awslambda.FunctionProps{
-		Code: awslambda.Code_FromAsset(jsii.String("../app"), &awss3assets.AssetOptions{
-			Bundling: &awscdk.BundlingOptions{
-				Image: awscdk.DockerImage_FromRegistry(jsii.String("golang:1.23.2")),
-				Command: &[]*string{
-					jsii.String("bash"),
-					jsii.String("-c"),
-					jsii.String("GOCACHE=/tmp go mod tidy && GOCACHE=/tmp GOARCH=arm64 GOOS=linux go build -tags lambda.norpc -o /asset-output/bootstrap " + path),
-				},
-			},
-		}),
+		Code:         awslambda.Code_FromAsset(jsii.String(fmt.Sprintf("../app/%s/build", path)), nil),
 		FunctionName: jsii.String(name + "Func"),
 		Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
 		MemorySize:   jsii.Number(128),

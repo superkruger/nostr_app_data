@@ -2,7 +2,6 @@ package requests
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/aws/jsii-runtime-go"
 	"go.mongodb.org/mongo-driver/bson"
@@ -88,13 +87,11 @@ func (r *repository) findForEvent(ctx context.Context, event domain.Event) ([]do
 }
 
 func tagsFilter(event domain.Event) []bson.M {
-	// TODO: add indices
 	filter := []bson.M{
 		{"tags": bson.M{"$exists": false}},
 	}
 	for _, tag := range event.Tags {
 		filter = append(filter, bson.M{"tags." + tag[0]: tag[1]})
 	}
-	fmt.Printf("- filter: %+v\n", filter)
 	return filter
 }

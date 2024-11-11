@@ -22,20 +22,22 @@ import (
 )
 
 type handler struct {
-	responder  apigateway.ProxyResponder
-	reqService requests.Service
-	evtService evts.Service
-	notifier   notifiers.Notifier
-	shutdown   func()
+	responder      apigateway.ProxyResponder
+	reqService     requests.Service
+	evtService     evts.Service
+	notifier       notifiers.Notifier
+	notifierIssues notifiers.Notifier
+	shutdown       func()
 }
 
 func mustNewHandler() *handler {
 	db, closeDb := skmongo.MustFromSecretWithClose(env.MustGetString("DB_SECRET"))
 	sess := session.Must(session.NewSession())
 	return &handler{
-		reqService: requests.NewService(requests.WithRepo(requests.NewRepository(db))),
-		evtService: evts.NewService(evts.WithRepo(evts.NewRepository(db))),
-		notifier:   notifiers.NewSNSNotifier(sns.New(sess), env.MustGetString("EVENT_FORWARD_TOPIC")),
+		reqService:     requests.NewService(requests.WithRepo(requests.NewRepository(db))),
+		evtService:     evts.NewService(evts.WithRepo(evts.NewRepository(db))),
+		notifier:       notifiers.NewSNSNotifier(sns.New(sess), env.MustGetString("EVENT_FORWARD_TOPIC")),
+		notifierIssues: notifiers.NewSNSNotifier(sns.New(sess), env.MustGetString("ISSUES_TOPIC")),
 		shutdown: func() {
 			closeDb()
 		},
@@ -79,7 +81,10 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 	if err := h.notifier.Send(ctx, messages.NewForJSON(forwardEvent).WithFifoID(r.ID, domain.EventTypeEOSE)); err != nil {
 		log.Printf("failed to send forward event: %v", err)
 	}
-
+	unIndexedTags := r.UnIndexedTags()
+	if err := h.notifierIssues.Send(ctx, messages.NewForJSON(unIndexedTags)); err != nil {
+		log.Printf("failed to send issues event: %v", err)
+	}
 	return h.responder.WithStatus(http.StatusOK), nil
 }
 

@@ -3,8 +3,15 @@ package events
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/superkruger/nostr_app_data/app/domain"
+)
+
+const (
+	ttlSecondsRegular     = 3600 * 24 * 7 * time.Second
+	ttlSecondsReplaceable = 3600 * 24 * 7 * 30 * time.Second
+	ttlSecondsAddressable = 3600 * 24 * 7 * 30 * time.Second
 )
 
 type Service interface {
@@ -40,20 +47,18 @@ func (s *service) Add(ctx context.Context, event domain.Event) error {
 		return fmt.Errorf("invalid signature")
 	}
 	dbEvent := event.ToDB()
-	if event.IsRegular() {
+	now := time.Now()
+	if dbEvent.IsRegular() {
+		dbEvent.ExpireAt = now.Add(ttlSecondsRegular)
 		return s.repo.add(ctx, dbEvent)
 	}
-	if event.IsReplaceable() {
-		if err := s.repo.removeReplaceable(ctx, event.PubKey, event.Kind); err != nil {
-			return err
-		}
-		return s.repo.add(ctx, dbEvent)
+	if dbEvent.IsReplaceable() {
+		dbEvent.ExpireAt = now.Add(ttlSecondsReplaceable)
+		return s.repo.replace(ctx, dbEvent)
 	}
-	if event.IsAddressable() {
-		if err := s.repo.removeAddressable(ctx, event.PubKey, event.Kind, dbEvent.Tags["d"]); err != nil {
-			return err
-		}
-		return s.repo.add(ctx, dbEvent)
+	if dbEvent.IsAddressable() {
+		dbEvent.ExpireAt = now.Add(ttlSecondsAddressable)
+		return s.repo.replaceAddressable(ctx, dbEvent)
 	}
 	return nil
 }

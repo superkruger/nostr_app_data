@@ -1,6 +1,10 @@
 [
   {
     "dropIndexes": "connections",
+    "index": "expires_at"
+  },
+  {
+    "dropIndexes": "connections",
     "index": "id"
   }
 ]

@@ -62,6 +62,15 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	webSocketApi.AddRoute(jsii.String("EVENT"), &awsapigatewayv2.WebSocketRouteOptions{
 		Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("EventIntegration"), eventHandler, nil),
 	})
+	//dn := awsapigatewayv2.NewDomainName(stack, jsii.String("DomainName"), &awsapigatewayv2.DomainNameProps{
+	//	Certificate:          nil,
+	//	CertificateName:      nil,
+	//	EndpointType:         "",
+	//	OwnershipCertificate: nil,
+	//	SecurityPolicy:       "",
+	//	DomainName:           jsii.String("relay.a11n.io"),
+	//	Mtls:                 nil,
+	//})
 	wssStage := awsapigatewayv2.NewWebSocketStage(stack, jsii.String("WSSStage"), &awsapigatewayv2.WebSocketStageProps{
 		AutoDeploy:   jsii.Bool(true),
 		StageName:    jsii.String(cfg.Name),
@@ -72,6 +81,7 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	forwardHandler.AddEnvironment(jsii.String("WS_API_ENDPOINT"), wsApiEndpoint, nil)
 	//fmt.Printf("WS ARN %s\n", *webSocketApi.ArnForExecuteApi(jsii.String("POST"), jsii.String("/*"), jsii.String("test")))
 
+	issuesTopic := awssns.NewTopic(stack, jsii.String(name("IssuesTopic")), nil)
 	eventForwardTopic := awssns.NewTopic(stack, jsii.String(name("EventForwardTopic")), &awssns.TopicProps{
 		Fifo: jsii.Bool(true),
 	})
@@ -83,6 +93,11 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 
 	eventHandler.AddEnvironment(jsii.String("EVENT_FORWARD_TOPIC"), eventForwardTopic.TopicArn(), nil)
 	requestHandler.AddEnvironment(jsii.String("EVENT_FORWARD_TOPIC"), eventForwardTopic.TopicArn(), nil)
+	requestHandler.AddEnvironment(jsii.String("ISSUES_TOPIC"), issuesTopic.TopicArn(), nil)
+
+	eventForwardTopic.GrantPublish(eventHandler)
+	eventForwardTopic.GrantPublish(requestHandler)
+	issuesTopic.GrantPublish(requestHandler)
 
 	//postHandler := lambdaFunction(stack, "Post", "../app/functions/post",
 	//	map[string]*string{"WS_API_ENDPOINT": jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *env().Region, *wsStage.StageName()))})

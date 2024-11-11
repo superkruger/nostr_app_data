@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
@@ -32,13 +33,14 @@ type Event struct {
 }
 
 type DBEvent struct {
-	ID        string `bson:"id"`
-	PubKey    string `bson:"pubkey"`
-	Kind      int    `bson:"kind"`
-	Tags      DBTags `bson:"tags"`
-	CreatedAt int    `bson:"created_at"`
-	Content   string `bson:"content"`
-	Sig       string `bson:"sig"`
+	ID        string    `bson:"id"`
+	PubKey    string    `bson:"pubkey"`
+	Kind      int       `bson:"kind"`
+	Tags      DBTags    `bson:"tags"`
+	CreatedAt int       `bson:"created_at"`
+	Content   string    `bson:"content"`
+	Sig       string    `bson:"sig"`
+	ExpireAt  time.Time `bson:"expire_at,omitempty"`
 }
 
 func (evt *Event) Serialize() []byte {
@@ -136,16 +138,17 @@ func (evt *Event) ToDB() DBEvent {
 	}
 }
 
-func (evt *Event) IsRegular() bool {
+func (evt *DBEvent) IsRegular() bool {
 	return (evt.Kind >= 1000 && evt.Kind < 10000) || (evt.Kind >= 4 && evt.Kind < 45) || evt.Kind == 1 || evt.Kind == 2
 }
 
-func (evt *Event) IsReplaceable() bool {
+func (evt *DBEvent) IsReplaceable() bool {
 	return (evt.Kind >= 10000 && evt.Kind < 20000) || evt.Kind == 0 || evt.Kind == 3
 }
 
-func (evt *Event) IsAddressable() bool {
-	return evt.Kind >= 30000 && evt.Kind < 40000
+func (evt *DBEvent) IsAddressable() bool {
+	dTag, ok := evt.Tags["d"]
+	return evt.Kind >= 30000 && evt.Kind < 40000 && ok && len(dTag.Values) > 0
 }
 
 func (evt *DBEvent) ToJson() Event {

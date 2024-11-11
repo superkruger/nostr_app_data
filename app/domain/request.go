@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 )
+
+var indexedTags = map[string]struct{}{"e": {}, "p": {}, "a": {}, "d": {}}
 
 type Subscriber struct {
 	ID     string `json:"id" bson:"id"`
@@ -13,7 +16,8 @@ type Subscriber struct {
 
 type Request struct {
 	Subscriber
-	Filters []Filter `json:"-" bson:"filters"`
+	Filters  []Filter  `json:"-" bson:"filters"`
+	ExpireAt time.Time `json:"-" bson:"expire_at,omitempty"`
 }
 
 type Filter struct {
@@ -52,6 +56,18 @@ func (r *Request) Unmarshal(body, connectionID string) error {
 	return nil
 }
 
+func (r *Request) UnIndexedTags() []string {
+	unIndexed := make(map[string]struct{})
+	for _, f := range r.Filters {
+		f.unIndexedTags(unIndexed)
+	}
+	result := make([]string, 0, len(unIndexed))
+	for k := range unIndexed {
+		result = append(result, k)
+	}
+	return result
+}
+
 func (f *Filter) unmarshalTags(data []byte) error {
 	var jsonValue map[string]interface{}
 	err := json.Unmarshal(data, &jsonValue)
@@ -75,4 +91,12 @@ func (f *Filter) unmarshalTags(data []byte) error {
 
 func (f *Filter) isZero() bool {
 	return len(f.Ids) == 0 && len(f.Authors) == 0 && len(f.Kinds) == 0 && len(f.Tags) == 0 && f.Limit == 0
+}
+
+func (f *Filter) unIndexedTags(unIndexed map[string]struct{}) {
+	for tag := range f.Tags {
+		if _, ok := indexedTags[tag]; !ok {
+			unIndexed[tag] = struct{}{}
+		}
+	}
 }

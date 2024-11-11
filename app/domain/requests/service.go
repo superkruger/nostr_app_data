@@ -2,9 +2,12 @@ package requests
 
 import (
 	"context"
+	"time"
 
 	"github.com/superkruger/nostr_app_data/app/domain"
 )
+
+const ttlSeconds = 3600 * 24 * time.Second
 
 type Service interface {
 	Add(ctx context.Context, request domain.Request) error
@@ -31,6 +34,8 @@ func WithRepo(repo Repository) func(svc *service) {
 }
 
 func (s *service) Add(ctx context.Context, request domain.Request) error {
+	now := time.Now()
+	request.ExpireAt = now.Add(ttlSeconds)
 	return s.repo.add(ctx, request)
 }
 

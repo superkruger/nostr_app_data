@@ -1,0 +1,42 @@
+[
+  {
+    "dropIndexes": "requests",
+    "index": "expires_at"
+  },
+  {
+    "dropIndexes": "requests",
+    "index": "ids"
+  },
+  {
+    "dropIndexes": "requests",
+    "index": "authors"
+  },
+  {
+    "dropIndexes": "requests",
+    "index": "kinds"
+  },
+  {
+    "dropIndexes": "requests",
+    "index": "since"
+  },
+  {
+    "dropIndexes": "requests",
+    "index": "until"
+  },
+  {
+    "dropIndexes": "requests",
+    "index": "tags_e"
+  },
+  {
+    "dropIndexes": "requests",
+    "index": "tags_p"
+  },
+  {
+    "dropIndexes": "requests",
+    "index": "tags_a"
+  },
+  {
+    "dropIndexes": "requests",
+    "index": "tags_d"
+  }
+]

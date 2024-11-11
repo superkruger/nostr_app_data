@@ -3,6 +3,14 @@
   "indexes": [
     {
       "key":{
+        "expires_at" : 1
+      },
+      "name": "expires_at",
+      "background": true,
+      "expireAfterSeconds": 0
+    },
+    {
+      "key":{
         "id" : 1
       },
       "name": "id",

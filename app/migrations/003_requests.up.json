@@ -1,5 +1,5 @@
 [{
-  "createIndexes": "events",
+  "createIndexes": "requests",
   "indexes": [
     {
       "key":{
@@ -11,57 +11,63 @@
     },
     {
       "key":{
-        "id" : 1
+        "ids" : 1
       },
-      "name": "id",
-      "unique": true,
+      "name": "ids",
       "background": true
     },
     {
       "key":{
-        "pubkey" : 1
+        "authors" : 1
       },
-      "name": "pubkey",
+      "name": "authors",
       "background": true
     },
     {
       "key":{
-        "kind" : 1
+        "kinds" : 1
       },
-      "name": "kind",
+      "name": "kinds",
       "background": true
     },
     {
       "key":{
-        "created_at" : 1
+        "since" : 1
       },
-      "name": "created_at",
+      "name": "since",
       "background": true
     },
     {
       "key":{
-        "tags.e.values" : 1
+        "until" : 1
+      },
+      "name": "until",
+      "background": true
+    },
+    {
+      "key":{
+        "tags.e" : 1
       },
       "name": "tags_e",
       "background": true
     },
     {
       "key":{
-        "tags.p.values" : 1
+        "tags.p" : 1
       },
       "name": "tags_p",
       "background": true
     },
     {
       "key":{
-        "tags.a.values" : 1
+        "tags.a" : 1
       },
       "name": "tags_a",
       "background": true
     },
     {
       "key":{
-        "tags.d.values" : 1
+        "tags.d" : 1
       },
       "name": "tags_d",
       "background": true

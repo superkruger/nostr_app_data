@@ -1,6 +1,10 @@
 [
   {
     "dropIndexes": "events",
+    "index": "expires_at"
+  },
+  {
+    "dropIndexes": "events",
     "index": "id"
   },
   {
@@ -13,10 +17,22 @@
   },
   {
     "dropIndexes": "events",
-    "index": "tags_d"
+    "index": "created_at"
   },
   {
     "dropIndexes": "events",
     "index": "tags_e"
+  },
+  {
+    "dropIndexes": "events",
+    "index": "tags_p"
+  },
+  {
+    "dropIndexes": "events",
+    "index": "tags_a"
+  },
+  {
+    "dropIndexes": "events",
+    "index": "tags_d"
   }
 ]

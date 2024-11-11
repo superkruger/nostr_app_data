@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambdaeventsources"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslogs"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awssnssubscriptions"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssqs"
 	"github.com/aws/aws-cdk-go/awscdk/v2/pipelines"
 	"github.com/aws/constructs-go/constructs/v10"
@@ -89,6 +90,7 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	})
 
 	forwardHandler.AddEventSource(awslambdaeventsources.NewSqsEventSource(eventForwardQueue, nil))
+	eventForwardTopic.AddSubscription(awssnssubscriptions.NewSqsSubscription(eventForwardQueue, nil))
 
 	eventHandler.AddEnvironment(jsii.String("EVENT_FORWARD_TOPIC"), eventForwardTopic.TopicArn(), nil)
 	requestHandler.AddEnvironment(jsii.String("EVENT_FORWARD_TOPIC"), eventForwardTopic.TopicArn(), nil)

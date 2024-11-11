@@ -35,6 +35,7 @@ func (r *Request) Unmarshal(body, connectionID string) error {
 		return fmt.Errorf("expected a length of at least 3")
 	}
 	if err := json.Unmarshal(raw[1], &r.ID); err != nil {
+		return fmt.Errorf("failed to unmarshal subscription id: %w", err)
 	}
 	r.ConnID = connectionID
 	r.Filters = make([]Filter, len(raw[2:]))

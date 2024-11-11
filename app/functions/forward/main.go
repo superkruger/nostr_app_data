@@ -13,6 +13,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/goccy/go-json"
 	"github.com/superkruger/nostr_app_data/app/domain"
+	"github.com/superkruger/nostr_app_data/app/domain/requests"
 
 	conns "github.com/superkruger/nostr_app_data/app/domain/connections"
 	"github.com/superkruger/nostr_app_data/app/utils/aws/apigateway"
@@ -24,6 +25,7 @@ type handler struct {
 	responder           apigateway.ProxyResponder
 	managementApiClient *apigatewaymanagementapi.ApiGatewayManagementApi
 	connService         conns.Service
+	reqService          requests.Service
 	shutdown            func()
 }
 
@@ -39,6 +41,7 @@ func mustNewHandler() *handler {
 				WithRegion(env.MustGetString("AWS_REGION")).
 				WithEndpoint(env.MustGetString("WS_API_ENDPOINT"))),
 		connService: conns.NewService(conns.WithRepo(conns.NewRepository(db))),
+		reqService:  requests.NewService(requests.WithRepo(requests.NewRepository(db))),
 		shutdown: func() {
 			closeDb()
 		},
@@ -69,6 +72,7 @@ func (h *handler) handleEvent(ctx context.Context, event events.SQSEvent) error 
 			if err != nil {
 				log.Printf("error posting to connection: %v", err)
 				_ = h.connService.Remove(ctx, sub.ConnID)
+				_ = h.reqService.Remove(ctx, sub.ID)
 			}
 		}
 	}

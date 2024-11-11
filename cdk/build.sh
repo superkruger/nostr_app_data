@@ -1,6 +1,6 @@
 #!/bin/bash
 
-functions=("./functions/connect" "./functions/default" "./functions/disconnect" "./functions/event" "./functions/forward" "./functions/request")
+functions=("./functions/connect" "./functions/default" "./functions/disconnect" "./functions/event" "./functions/forward" "./functions/request" "./functions/close")
 
 cd ../app
 

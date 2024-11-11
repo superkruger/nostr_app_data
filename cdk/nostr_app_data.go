@@ -43,6 +43,9 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	forwardHandler := lambdaFunction(stack, name("Forward"), "functions/forward", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
+	closeHandler := lambdaFunction(stack, name("Close"), "functions/close", cfg, map[string]*string{
+		"DB_SECRET": jsii.String(cfg.DBSecret),
+	})
 
 	webSocketApi := awsapigatewayv2.NewWebSocketApi(stack, jsii.String(name("WSSAPI")), &awsapigatewayv2.WebSocketApiProps{
 		ConnectRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
@@ -61,6 +64,9 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	})
 	webSocketApi.AddRoute(jsii.String("EVENT"), &awsapigatewayv2.WebSocketRouteOptions{
 		Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("EventIntegration"), eventHandler, nil),
+	})
+	webSocketApi.AddRoute(jsii.String("CLOSE"), &awsapigatewayv2.WebSocketRouteOptions{
+		Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("CloseIntegration"), closeHandler, nil),
 	})
 	//dn := awsapigatewayv2.NewDomainName(stack, jsii.String("DomainName"), &awsapigatewayv2.DomainNameProps{
 	//	Certificate:          nil,

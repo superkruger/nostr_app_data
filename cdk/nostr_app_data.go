@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2integrations"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awscertificatemanager"
 	codebuild "github.com/aws/aws-cdk-go/awscdk/v2/awscodebuild"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
@@ -17,7 +18,6 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/pipelines"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-
 	"github.com/superkruger/nostr_app_data/cdk/config"
 )
 
@@ -68,19 +68,15 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	webSocketApi.AddRoute(jsii.String("CLOSE"), &awsapigatewayv2.WebSocketRouteOptions{
 		Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("CloseIntegration"), closeHandler, nil),
 	})
-	//dn := awsapigatewayv2.NewDomainName(stack, jsii.String("DomainName"), &awsapigatewayv2.DomainNameProps{
-	//	Certificate:          nil,
-	//	CertificateName:      nil,
-	//	EndpointType:         "",
-	//	OwnershipCertificate: nil,
-	//	SecurityPolicy:       "",
-	//	DomainName:           jsii.String("relay.a11n.io"),
-	//	Mtls:                 nil,
-	//})
+	dn := awsapigatewayv2.NewDomainName(stack, jsii.String("DomainName"), &awsapigatewayv2.DomainNameProps{
+		Certificate: awscertificatemanager.Certificate_FromCertificateArn(stack, jsii.String("Certificate"), jsii.String("arn:aws:acm:us-east-1:418272791745:certificate/f15765f0-0721-4de1-b3ec-5d6063b04f20")),
+		DomainName:  jsii.String(fmt.Sprintf("relay%s.transtoad.com", cfg.Subdomain)),
+	})
 	wssStage := awsapigatewayv2.NewWebSocketStage(stack, jsii.String("WSSStage"), &awsapigatewayv2.WebSocketStageProps{
-		AutoDeploy:   jsii.Bool(true),
-		StageName:    jsii.String(cfg.Name),
-		WebSocketApi: webSocketApi,
+		AutoDeploy:    jsii.Bool(true),
+		DomainMapping: &awsapigatewayv2.DomainMappingOptions{DomainName: dn},
+		StageName:     jsii.String(cfg.Name),
+		WebSocketApi:  webSocketApi,
 	})
 	wsApiEndpoint := jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *props.Env.Region, *wssStage.StageName()))
 	requestHandler.AddEnvironment(jsii.String("WS_API_ENDPOINT"), wsApiEndpoint, nil)

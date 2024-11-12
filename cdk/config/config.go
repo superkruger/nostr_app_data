@@ -12,6 +12,7 @@ type Config struct {
 	Region    string `yaml:"region"`
 	Branch    string `yaml:"branch"`
 	DBSecret  string `yaml:"db_secret"`
+	Subdomain string `yaml:"subdomain"`
 }
 
 func MustNewConfig(env string) Config {

@@ -10,8 +10,8 @@ import (
 
 const (
 	ttlSecondsRegular     = 3600 * 24 * 7 * time.Second
-	ttlSecondsReplaceable = 3600 * 24 * 7 * 30 * time.Second
-	ttlSecondsAddressable = 3600 * 24 * 7 * 30 * time.Second
+	ttlSecondsReplaceable = 3600 * 24 * 30 * time.Second
+	ttlSecondsAddressable = 3600 * 24 * 30 * time.Second
 )
 
 type Service interface {

@@ -1,6 +1,7 @@
 name: test
 account_id: '418272791745'
-region: us-east-1
+region_a: us-east-1
+region_b: us-east-2
 branch: develop
 db_secret: 'test/nostr/mongo/rw'
 subdomain: '-test'

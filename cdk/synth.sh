@@ -1,4 +1,4 @@
 #!/bin/bash
 
 ./build.sh
-cdk synth --context environment=$1
+cdk synth --context environment=$1 --all

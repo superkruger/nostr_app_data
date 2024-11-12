@@ -21,7 +21,7 @@ import (
 	"github.com/superkruger/nostr_app_data/cdk/config"
 )
 
-func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, props *awscdk.StackProps) awscdk.Stack {
+func NewCdkAppStackA(scope constructs.Construct, id *string, cfg config.Config, props *awscdk.StackProps) awscdk.Stack {
 	name := func(name string) string {
 		return fmt.Sprintf("%s-%s", *id, name)
 	}
@@ -46,16 +46,15 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	closeHandler := lambdaFunction(stack, name("Close"), "functions/close", cfg, map[string]*string{
 		"DB_SECRET": jsii.String(cfg.DBSecret),
 	})
-
 	webSocketApi := awsapigatewayv2.NewWebSocketApi(stack, jsii.String(name("WSSAPI")), &awsapigatewayv2.WebSocketApiProps{
 		ConnectRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
 			Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("ConnectIntegration"), connectHandler, nil),
 		},
-		DisconnectRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
-			Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("DisconnectIntegration"), disconnectHandler, nil),
-		},
 		DefaultRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
 			Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("DefaultIntegration"), defaultHandler, nil),
+		},
+		DisconnectRouteOptions: &awsapigatewayv2.WebSocketRouteOptions{
+			Integration: awsapigatewayv2integrations.NewWebSocketLambdaIntegration(jsii.String("DisconnectIntegration"), disconnectHandler, nil),
 		},
 		RouteSelectionExpression: jsii.String("$request.body.[0]"),
 	})
@@ -72,6 +71,11 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 		Certificate: awscertificatemanager.Certificate_FromCertificateArn(stack, jsii.String("Certificate"), jsii.String("arn:aws:acm:us-east-1:418272791745:certificate/f15765f0-0721-4de1-b3ec-5d6063b04f20")),
 		DomainName:  jsii.String(fmt.Sprintf("relay%s.transtoad.com", cfg.Subdomain)),
 	})
+	//dnHTTP := awsapigatewayv2.NewDomainName(stack, jsii.String(name("HTTPDomainName")), &awsapigatewayv2.DomainNameProps{
+	//	Certificate:  awscertificatemanager.Certificate_FromCertificateArn(stack, jsii.String("HTTPCertificate"), jsii.String("arn:aws:acm:us-east-1:418272791745:certificate/f15765f0-0721-4de1-b3ec-5d6063b04f20")),
+	//	EndpointType: awsapigatewayv2.EndpointType_EDGE,
+	//	DomainName:   jsii.String(fmt.Sprintf("relay%s.transtoad.com", cfg.Subdomain)),
+	//})
 	wssStage := awsapigatewayv2.NewWebSocketStage(stack, jsii.String("WSSStage"), &awsapigatewayv2.WebSocketStageProps{
 		AutoDeploy:    jsii.Bool(true),
 		DomainMapping: &awsapigatewayv2.DomainMappingOptions{DomainName: dn},
@@ -102,27 +106,18 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	eventForwardTopic.GrantPublish(requestHandler)
 	issuesTopic.GrantPublish(requestHandler)
 
-	//postHandler := lambdaFunction(stack, "Post", "../app/functions/post",
-	//	map[string]*string{"WS_API_ENDPOINT": jsii.String(fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s", *webSocketApi.ApiId(), *env().Region, *wsStage.StageName()))})
-	//
-	//httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String("myhttpapi"), &awsapigatewayv2.HttpApiProps{
-	//	CorsPreflight: &awsapigatewayv2.CorsPreflightOptions{
-	//		AllowMethods: &[]awsapigatewayv2.CorsHttpMethod{awsapigatewayv2.CorsHttpMethod_POST, awsapigatewayv2.CorsHttpMethod_OPTIONS},
-	//		AllowOrigins: &[]*string{jsii.String("*")},
-	//	},
-	//	CreateDefaultStage: jsii.Bool(false),
-	//	//DefaultIntegration: awsapigatewayv2integrations.NewHttpLambdaIntegration(jsii.String("PostIntegration"), postHandler, nil),
-	//})
-	//httpApi.AddStage(jsii.String("myhttpstage"), &awsapigatewayv2.HttpStageOptions{
-	//	AutoDeploy: jsii.Bool(true),
-	//	StageName:  jsii.String("test"),
+	webSocketApi.GrantManageConnections(forwardHandler)
+
+	//httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String("HTTPAPI"), &awsapigatewayv2.HttpApiProps{
+	//	DefaultDomainMapping:      &awsapigatewayv2.DomainMappingOptions{DomainName: dn},
+	//	DisableExecuteApiEndpoint: jsii.Bool(true),
+	//	RouteSelectionExpression:  jsii.Bool(true),
 	//})
 	//httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-	//	Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(jsii.String("PostIntegration"), postHandler, nil),
+	//	Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(jsii.String("NIP11Integration"), nip11Handler, nil),
 	//	Path:        jsii.String("/"),
-	//	Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_POST},
+	//	Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
 	//})
-	webSocketApi.GrantManageConnections(forwardHandler)
 
 	awscdk.NewCfnOutput(stack, jsii.String(name("WSSApiURL")), &awscdk.CfnOutputProps{
 		Value:       webSocketApi.ApiEndpoint(),
@@ -136,6 +131,39 @@ func NewCdkAppStack(scope constructs.Construct, id *string, cfg config.Config, p
 	//	ExportName:  jsii.String("HTTPApiURL"),
 	//})
 
+	return stack
+}
+
+func NewCdkAppStackB(scope constructs.Construct, id *string, cfg config.Config, props *awscdk.StackProps) awscdk.Stack {
+	name := func(name string) string {
+		return fmt.Sprintf("%s-%s", *id, name)
+	}
+	stack := awscdk.NewStack(scope, id, props)
+
+	nip11Handler := lambdaFunction(stack, name("NIP11"), "functions/nip11", cfg, map[string]*string{})
+
+	dn := awsapigatewayv2.NewDomainName(stack, jsii.String("DomainName"), &awsapigatewayv2.DomainNameProps{
+		Certificate: awscertificatemanager.Certificate_FromCertificateArn(stack, jsii.String("Certificate"), jsii.String("arn:aws:acm:us-east-2:418272791745:certificate/c3a862b6-6799-4b65-8e7b-c9de1a6c464a")),
+		DomainName:  jsii.String(fmt.Sprintf("relay%s.transtoad.com", cfg.Subdomain)),
+	})
+
+	httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String(name("HTTPAPI")), &awsapigatewayv2.HttpApiProps{
+		CorsPreflight: &awsapigatewayv2.CorsPreflightOptions{
+			AllowMethods: &[]awsapigatewayv2.CorsHttpMethod{awsapigatewayv2.CorsHttpMethod_GET, awsapigatewayv2.CorsHttpMethod_OPTIONS},
+			AllowOrigins: &[]*string{jsii.String("*")},
+		},
+		CreateDefaultStage: jsii.Bool(false),
+	})
+	httpApi.AddStage(jsii.String("HTTPStage"), &awsapigatewayv2.HttpStageOptions{
+		AutoDeploy:    jsii.Bool(true),
+		DomainMapping: &awsapigatewayv2.DomainMappingOptions{DomainName: dn},
+		StageName:     jsii.String("test"),
+	})
+	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(jsii.String("NIP11Integration"), nip11Handler, nil),
+		Path:        jsii.String("/"),
+		Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
+	})
 	return stack
 }
 
@@ -176,7 +204,7 @@ func NewCdkApplication(scope constructs.Construct, id *string, cfg config.Config
 		return fmt.Sprintf("%s-%s", *id, name)
 	}
 	stage := awscdk.NewStage(scope, id, props)
-	_ = NewCdkAppStack(stage, jsii.String(name("Stack")), cfg, &awscdk.StackProps{Env: props.Env})
+	_ = NewCdkAppStackA(stage, jsii.String(name("Stack")), cfg, &awscdk.StackProps{Env: props.Env})
 	return stage
 }
 
@@ -233,8 +261,12 @@ func main() {
 	envName := app.Node().GetContext(jsii.String("environment"))
 	cfg := config.MustNewConfig(envName.(string))
 
-	NewCdkAppStack(app, jsii.String(fmt.Sprintf("%s-%s", cfg.Name, "NostrAppData")), cfg, &awscdk.StackProps{
-		Env: env(cfg),
+	NewCdkAppStackA(app, jsii.String(fmt.Sprintf("%s-%s", cfg.Name, "NostrAppData")), cfg, &awscdk.StackProps{
+		Env: envA(cfg),
+	})
+
+	NewCdkAppStackB(app, jsii.String(fmt.Sprintf("%s-%s", cfg.Name, "NostrAppDataExtra")), cfg, &awscdk.StackProps{
+		Env: envB(cfg),
 	})
 
 	//NewCdkPipeline(app, jsii.String(fmt.Sprintf("%s-%s", cfg.Name, "PipelineStack")), cfg, &awscdk.StackProps{
@@ -245,7 +277,7 @@ func main() {
 
 // env determines the AWS environment (account+region) in which our stack is to
 // be deployed. For more information see: https://docs.aws.amazon.com/cdk/latest/guide/environments.html
-func env(cfg config.Config) *awscdk.Environment {
+func envA(cfg config.Config) *awscdk.Environment {
 	// If unspecified, this stack will be "environment-agnostic".
 	// Account/Region-dependent features and context lookups will not work, but a
 	// single synthesized template can be deployed anywhere.
@@ -257,7 +289,7 @@ func env(cfg config.Config) *awscdk.Environment {
 	//---------------------------------------------------------------------------
 	return &awscdk.Environment{
 		Account: jsii.String(cfg.AccountID), //jsii.String("418272791745"),
-		Region:  jsii.String(cfg.Region),    //jsii.String("us-east-1"),
+		Region:  jsii.String(cfg.RegionA),   //jsii.String("us-east-1"),
 	}
 
 	// Uncomment to specialize this stack for the AWS Account and Region that are
@@ -268,4 +300,11 @@ func env(cfg config.Config) *awscdk.Environment {
 	//  Account: jsii.String(os.Getenv("CDK_DEFAULT_ACCOUNT")),
 	//  Region:  jsii.String(os.Getenv("CDK_DEFAULT_REGION")),
 	// }
+}
+
+func envB(cfg config.Config) *awscdk.Environment {
+	return &awscdk.Environment{
+		Account: jsii.String(cfg.AccountID), //jsii.String("418272791745"),
+		Region:  jsii.String(cfg.RegionB),   //jsii.String("us-east-1"),
+	}
 }

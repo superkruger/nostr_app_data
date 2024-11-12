@@ -1,6 +1,7 @@
 name: prod
 account_id: '418272791745'
-region: us-east-1
+region_a: us-east-1
+region_b: us-east-2
 branch: master
 db_secret: 'prod/nostr/mongo/rw'
 subdomain: ''

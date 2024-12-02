@@ -71,6 +71,7 @@ func (h *handler) handleEvent(ctx context.Context, event events.SQSEvent) error 
 		g, gCtx := errgroup.WithContext(ctx)
 		subChan := make(chan domain.Subscriber)
 		go func() {
+			defer close(subChan)
 			for _, sub := range forwardEvent.Subscribers {
 				subChan <- sub
 			}

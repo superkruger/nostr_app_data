@@ -147,23 +147,29 @@ func NewCdkAppStackB(scope constructs.Construct, id *string, cfg config.Config, 
 		DomainName:  jsii.String(fmt.Sprintf("relay%s.transtoad.com", cfg.Subdomain)),
 	})
 
-	httpApi := awsapigatewayv2.NewHttpApi(stack, jsii.String(name("HTTPAPI")), &awsapigatewayv2.HttpApiProps{
+	awsapigatewayv2.NewHttpApi(stack, jsii.String(name("HTTPAPI")), &awsapigatewayv2.HttpApiProps{
+		ApiName: nil,
 		CorsPreflight: &awsapigatewayv2.CorsPreflightOptions{
 			AllowMethods: &[]awsapigatewayv2.CorsHttpMethod{awsapigatewayv2.CorsHttpMethod_GET, awsapigatewayv2.CorsHttpMethod_OPTIONS},
 			AllowOrigins: &[]*string{jsii.String("*")},
 		},
-		CreateDefaultStage: jsii.Bool(false),
+		CreateDefaultStage:        jsii.Bool(true),
+		DefaultDomainMapping:      &awsapigatewayv2.DomainMappingOptions{DomainName: dn},
+		DefaultIntegration:        awsapigatewayv2integrations.NewHttpLambdaIntegration(jsii.String("NIP11Integration"), nip11Handler, nil),
+		Description:               nil,
+		DisableExecuteApiEndpoint: nil,
+		RouteSelectionExpression:  nil,
 	})
-	httpApi.AddStage(jsii.String("HTTPStage"), &awsapigatewayv2.HttpStageOptions{
-		AutoDeploy:    jsii.Bool(true),
-		DomainMapping: &awsapigatewayv2.DomainMappingOptions{DomainName: dn},
-		StageName:     jsii.String("test"),
-	})
-	httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
-		Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(jsii.String("NIP11Integration"), nip11Handler, nil),
-		Path:        jsii.String("/"),
-		Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
-	})
+	//httpApi.AddStage(jsii.String("HTTPStage"), &awsapigatewayv2.HttpStageOptions{
+	//	AutoDeploy:    jsii.Bool(true),
+	//	DomainMapping: &awsapigatewayv2.DomainMappingOptions{DomainName: dn},
+	//	StageName:     jsii.String("test"),
+	//})
+	//httpApi.AddRoutes(&awsapigatewayv2.AddRoutesOptions{
+	//	Integration: awsapigatewayv2integrations.NewHttpLambdaIntegration(jsii.String("NIP11Integration"), nip11Handler, nil),
+	//	Path:        jsii.String("/"),
+	//	Methods:     &[]awsapigatewayv2.HttpMethod{awsapigatewayv2.HttpMethod_GET},
+	//})
 	return stack
 }
 

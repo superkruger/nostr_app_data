@@ -34,5 +34,13 @@
   {
     "dropIndexes": "events",
     "index": "tags_d"
+  },
+  {
+    "dropIndexes": "events",
+    "index": "tags_k"
+  },
+  {
+    "dropIndexes": "events",
+    "index": "tags_l"
   }
 ]

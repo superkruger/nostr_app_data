@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var indexedTags = map[string]struct{}{"e": {}, "p": {}, "a": {}, "d": {}}
+var indexedTags = map[string]struct{}{"e": {}, "p": {}, "a": {}, "d": {}, "k": {}, "l": {}}
 
 type Request struct {
 	ID       string    `json:"id" bson:"id"`

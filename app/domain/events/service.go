@@ -48,6 +48,13 @@ func (s *service) Add(ctx context.Context, event domain.Event) error {
 	}
 	dbEvent := event.ToDB()
 	now := time.Now()
+	spam, err := s.repo.isSpam(ctx, dbEvent, now)
+	if err != nil {
+		return err
+	}
+	if spam {
+		return fmt.Errorf("event is spam")
+	}
 	if dbEvent.IsRegular() {
 		dbEvent.ExpireAt = now.Add(ttlSecondsRegular)
 		return s.repo.add(ctx, dbEvent)

@@ -61,7 +61,7 @@ func (h *handler) handleRequest(ctx context.Context, request events.APIGatewayWe
 	}
 	if err := h.evtService.Add(ctx, e); err != nil {
 		log.Printf("failed to add event: %v", err)
-		return h.responder.WithStatus(http.StatusInternalServerError).WithJSONBody(eventResult(false, e.ID, "error: failed to store event")), nil
+		return h.responder.WithStatus(http.StatusInternalServerError).WithJSONBody(eventResult(false, e.ID, fmt.Sprintf("error: failed to store event: %s", err.Error()))), nil
 	}
 	requests, err := h.reqService.Find(ctx, e)
 	if err != nil {

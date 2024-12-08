@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"hash/crc32"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -44,6 +45,7 @@ type DBEvent struct {
 	Tags      DBTags    `bson:"tags"`
 	CreatedAt int       `bson:"created_at"`
 	Content   string    `bson:"content"`
+	Checksum  int       `bson:"checksum"`
 	Sig       string    `bson:"sig"`
 	ExpireAt  time.Time `bson:"expire_at,omitempty"`
 }
@@ -139,6 +141,7 @@ func (evt *Event) ToDB() DBEvent {
 		Tags:      evt.Tags.toDB(),
 		CreatedAt: evt.CreatedAt,
 		Content:   evt.Content,
+		Checksum:  int(crc32.Checksum([]byte(evt.Content), crc32.IEEETable)),
 		Sig:       evt.Sig,
 	}
 }

@@ -28,10 +28,11 @@ func main() {
 		"file://.",
 		fmt.Sprintf("mongodb+srv://%v:%v@%v/%v", cnfg.Username, cnfg.Password, cnfg.Host, cnfg.Database),
 	)
-	log.Print("migrate initialized")
 	if err != nil {
 		log.Fatal(err)
 	}
+	v, _, _ := m.Version()
+	log.Printf("migrate initialized: %d", v)
 	err = m.Steps(1)
 	if err != nil {
 		log.Fatal(err)

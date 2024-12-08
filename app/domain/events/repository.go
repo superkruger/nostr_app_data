@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aws/jsii-runtime-go"
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,7 +14,10 @@ import (
 	"github.com/superkruger/nostr_app_data/app/utils/skmongo"
 )
 
-const collectionName = "events"
+const (
+	collectionName = "events"
+	spamSeconds    = 60 * 60
+)
 
 type Repository interface {
 	add(ctx context.Context, event domain.DBEvent) error
@@ -21,6 +25,7 @@ type Repository interface {
 	replaceAddressable(ctx context.Context, event domain.DBEvent) error
 	remove(ctx context.Context, id string) error
 	findForRequest(ctx context.Context, req domain.Request) ([]domain.DBEvent, error)
+	isSpam(ctx context.Context, event domain.DBEvent, now time.Time) (bool, error)
 }
 
 type repository struct {
@@ -113,4 +118,13 @@ func requestFilter(reqFilter domain.Filter) bson.M {
 		filter["created_at"] = bson.M{"$lte": reqFilter.Until}
 	}
 	return filter
+}
+
+func (r *repository) isSpam(ctx context.Context, event domain.DBEvent, now time.Time) (bool, error) {
+	filter := bson.M{"pubkey": event.PubKey, "checksum": event.Checksum, "created_at": bson.M{"$gt": now.Unix() - spamSeconds}}
+	cnt, err := r.c.CountDocuments(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+	return cnt > 0, nil
 }

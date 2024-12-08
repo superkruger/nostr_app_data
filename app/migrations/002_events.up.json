@@ -79,6 +79,20 @@
       },
       "name": "tags_l",
       "background": true
+    },
+    {
+      "key":{
+        "tags.q.values" : 1
+      },
+      "name": "tags_q",
+      "background": true
+    },
+    {
+      "key":{
+        "tags.t.values" : 1
+      },
+      "name": "tags_t",
+      "background": true
     }
   ]
 }]

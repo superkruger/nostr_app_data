@@ -46,5 +46,13 @@
   {
     "dropIndexes": "requests",
     "index": "tags_l"
+  },
+  {
+    "dropIndexes": "requests",
+    "index": "tags_q"
+  },
+  {
+    "dropIndexes": "requests",
+    "index": "tags_t"
   }
 ]
